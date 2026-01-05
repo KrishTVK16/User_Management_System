@@ -1,0 +1,13 @@
+# Dependencies
+/vendor
+/node_modules
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Config (Optional: Uncomment if you want to ignore local config)
+# includes/db_connect.php

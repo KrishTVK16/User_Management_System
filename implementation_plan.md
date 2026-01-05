@@ -1,0 +1,58 @@
+# Gap Analysis & Implementation Plan: TeamPulse
+
+You asked if the current files (`login.html`, `employee_dashboard.html`, `admin_dashboard.html`) are enough to meet your requirements.
+
+**The short answer is: NO.**
+
+Currently, we have only built the **"Skin"** (Frontend). We still need to build the **"Brain"** (PHP Logic) and the **"Memory"** (Database).
+
+Here is the breakdown of what is missing and what we need to build to satisfy your requirements.
+
+## 1. Database Layer (The Memory)
+*Status: Not Started*
+We need to create the database to store the data.
+- [ ] **database_setup.sql**: The script to create the following tables:
+  - `users`: For login and roles.
+  - `projects`: To manage active projects.
+  - `attendance`: To store login/logout times.
+  - `breaks`: To track break intervals.
+  - `work_logs`: For daily updates.
+
+## 2. Backend Layer (The Brain)
+*Status: Not Started*
+We need PHP scripts to make the buttons work.
+
+### Core System
+- [ ] **db_connect.php**: Connects the website to the database.
+- [ ] **auth_session.php**: Ensures only logged-in users access pages (Security Requirement).
+- [ ] **logout.php**: Destroys the session securely.
+
+### Functional Requirements Mapping
+
+| Requirement | Current Status | Missing File / Action Needed |
+| :--- | :--- | :--- |
+| **3.1 Authentication** | UI Ready | **login_action.php**: Check password & set session. |
+| **3.2 Attendance** | UI Ready | **attendance_action.php**: Logic to insert "Login Time" & update "Logout Time". |
+| **3.3 Break Mgmt** | UI Ready | **break_action.php**: Record start/end of breaks. |
+| **3.4 Project Mgmt** | UI Ready | **manage_projects.php**: Admin screen to Add/Assign projects. |
+| **3.5 Work Update** | UI Ready | **submit_log.php**: Save the daily work log to DB. |
+| **3.7 Reporting** | UI Ready | **export_excel.php**: Generate .csv/.xlsx files from DB data. |
+
+## 3. Frontend Integration
+*Status: Pending*
+We need to rename our `.html` files to `.php` and add the logic code inside them.
+
+- [ ] `login.html` -> **login.php**: Add error messages (e.g., "Wrong password").
+- [ ] `employee_dashboard.html` -> **dashboard_employee.php**:
+    - Fetch real name from DB (`Welcome, <?php echo $name; ?>`).
+    - Show real attendance status active/inactive.
+    - Populate project dropdown from DB.
+- [ ] `admin_dashboard.html` -> **dashboard_admin.php**:
+    - Calculate real stats (Active, On Break).
+    - Show live table data from DB.
+
+## Summary of Next Steps
+1.  **Create Database**: Run the SQL script. (Critical First Step)
+2.  **Helpers**: Create `db_connect.php`.
+3.  **Logic**: Implement `login_action.php` to allow you to actually log in.
+4.  **Connect**: Convert HTML dashboards to PHP and link them to the database.
