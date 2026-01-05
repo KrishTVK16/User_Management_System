@@ -55,6 +55,23 @@ A comprehensive Employee Management System built with PHP and MySQL. Features in
     - Move the project folder (User_Management_System) to your server's public folder (e.g., `C:\xampp\htdocs\`).
     - Open your browser and visit: `http://localhost/User_Management_System`
 
+## ⚠️ Important Deployment Note
+
+**You cannot host this application on GitHub Pages, Vercel, or Netlify.**
+
+These platforms only support "static" websites (HTML/CSS/JS). Because this application uses:
+1.  **PHP** (Server-side code)
+2.  **MySQL** (Database)
+
+**You must host it on a server that supports PHP & MySQL.**
+- **Free Options**: InfinityFree, 000webhost
+- **Paid Options**: Shared Hosting (Bluehost, HostGator), or Cloud (DigitalOcean, AWS).
+- **Temporary Sharing**: Use [ngrok](https://ngrok.com/) to share your localhost link publicly.
+
+### 🌟 Hosting on InfinityFree
+Since you chose InfinityFree, please read the step-by-step guide included in this repository:
+👉 **[How to Deploy to InfinityFree](DEPLOY_TO_INFINITYFREE.md)**
+
 ## Default Credentials
 
 ### Admin
