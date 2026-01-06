@@ -53,12 +53,12 @@ $user = mysqli_fetch_assoc(mysqli_query($conn, $user_sql));
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="logo" style="color: white; font-size: 1.5rem;">SmartFusion Team</div>
+                <img src="assets/logo.png" alt="SmartFusion" class="logo-img">
+                <span class="logo-text">SmartFusion</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="employee_dashboard.php" class="nav-item">Dashboard</a>
                 <a href="my_projects.php" class="nav-item">My Projects</a>
-                <a href="my_leaves.php" class="nav-item">Leaves & Permissions</a>
                 <a href="my_leaves.php" class="nav-item">Leaves & Permissions</a>
                 <a href="my_history.php" class="nav-item">History</a>
                 <a href="profile.php" class="nav-item active">Profile</a>

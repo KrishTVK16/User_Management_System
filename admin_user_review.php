@@ -30,13 +30,72 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action_date'])) {
 
     $request_type = '';
     $status = 'Approved';
+    $message = ""; // Initialize
 
-    if ($action_type == 'grant_permission') {
+    // 1. HANDLE TIME UPDATES
+    if ($action_type == 'update_time') {
+        $new_login = $_POST['new_login_time'] ? $_POST['new_login_time'] : null;
+        $new_logout = $_POST['new_logout_time'] ? $_POST['new_logout_time'] : null;
+
+        if ($new_login) {
+            // Check if attendance exists
+            $check_att = "SELECT id FROM attendance WHERE user_id='$user_id' AND date='$action_date'";
+            $att_res = mysqli_query($conn, $check_att);
+
+            if (mysqli_num_rows($att_res) > 0) {
+                // Update
+                $row = mysqli_fetch_assoc($att_res);
+                $att_id = $row['id'];
+
+                // Construct full datetime
+                $login_dt = "$action_date $new_login:00";
+                $logout_dt = $new_logout ? "'$action_date $new_logout:00'" : "NULL";
+
+                // Recalculate hours if logout exists
+                $total_hours = 0;
+                if ($new_logout) {
+                    $t1 = strtotime($login_dt);
+                    $t2 = strtotime("$action_date $new_logout:00");
+                    $total_hours = round(($t2 - $t1) / 3600, 2);
+                }
+
+                $up_sql = "UPDATE attendance SET login_time='$login_dt', logout_time=$logout_dt, total_work_hours='$total_hours' WHERE id='$att_id'";
+                if (mysqli_query($conn, $up_sql))
+                    $message = "Time updated.";
+            } else {
+                // Insert New
+                $login_dt = "$action_date $new_login:00";
+                $logout_dt = $new_logout ? "'$action_date $new_logout:00'" : "NULL";
+                $total_hours = 0;
+                if ($new_logout) {
+                    $t1 = strtotime($login_dt);
+                    $t2 = strtotime("$action_date $new_logout:00");
+                    $total_hours = round(($t2 - $t1) / 3600, 2);
+                }
+
+                $in_sql = "INSERT INTO attendance (user_id, date, login_time, logout_time, total_work_hours) VALUES ('$user_id', '$action_date', '$login_dt', $logout_dt, '$total_hours')";
+                if (mysqli_query($conn, $in_sql))
+                    $message = "Attendance record created.";
+            }
+        }
+    }
+
+    // 2. HANDLE STATUS / LEAVE REQUESTS
+    elseif ($action_type == 'grant_permission') {
         $request_type = 'Time Permission';
     } elseif ($action_type == 'mark_full_leave') {
         $request_type = 'Full Day Leave';
     } elseif ($action_type == 'mark_half_leave') {
         $request_type = 'Half Day';
+    } elseif ($action_type == 'mark_wfh') {
+        $request_type = 'Work From Home';
+    } elseif ($action_type == 'mark_on_duty') {
+        $request_type = 'On Duty';
+    } elseif ($action_type == 'mark_absent') {
+        // For absent, we might effectively just ensure no attendance or mark a specific "Absent" leave type?
+        // Or just deleting attendance? Let's treat it as a Leave record for clarity.
+        $request_type = 'Absent (Admin)';
+        $status = 'Approved';
     }
 
     if ($request_type) {
@@ -46,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action_date'])) {
             $insert = "INSERT INTO leave_requests (user_id, type, start_date, end_date, reason, status, admin_comment) 
                        VALUES ('$user_id', '$request_type', '$action_date', '$action_date', '$admin_comment', '$status', '$admin_comment')";
             if (mysqli_query($conn, $insert)) {
-                $message = "Status updated successfully for " . date('M d', strtotime($action_date));
+                $message = "Status updated: $request_type";
             } else {
                 $error = "Error updating status: " . mysqli_error($conn);
             }
@@ -117,8 +176,9 @@ while ($row = mysqli_fetch_assoc($leaves_result)) {
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="logo" style="color: white; font-size: 1.5rem;">SmartFusion Team</div>
-                <div class="text-sm text-muted">Admin Panel</div>
+                <img src="assets/logo.png" alt="SmartFusion" class="logo-img">
+                <span class="logo-text">SmartFusion</span>
+                <div class="text-sm text-muted" style="margin-left: auto;">Admin</div>
             </div>
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item">Dashboard</a>
@@ -225,44 +285,80 @@ while ($row = mysqli_fetch_assoc($leaves_result)) {
                                     $is_excused = false;
                                     if ($day_leaves) {
                                         foreach ($day_leaves as $leaf) {
-                                            $leaf_note .= "<div class='text-xs' style='margin-bottom:2px;'><span class='badge badge-success'>" . $leaf['type'] . "</span> <span class='text-muted'>(" . $leaf['admin_comment'] . ")</span></div>";
+                                            // Simple Display: Just the Type (e.g. "Work From Home", "Half Day")
+                                            $display_type = $leaf['type'];
+                                            if ($display_type == 'Full Day Leave')
+                                                $display_type = 'On Leave';
+
+                                            $leaf_note .= "<div class='text-xs' style='margin-bottom:2px;'><span class='badge badge-success'>" . $display_type . "</span></div>";
+
                                             if ($leaf['type'] == 'Time Permission' && $status_text == 'Undertime') {
-                                                $status_text = "Permission Granted";
+                                                $status_text = "Permission";
                                                 $status_class = "status-excused";
                                                 $is_excused = true;
                                             }
-                                            if (($leaf['type'] == 'Full Day Leave' || $leaf['type'] == 'Half Day') && $status_text == 'Absent') {
-                                                $status_text = "On Leave";
+                                            if (($leaf['type'] == 'Full Day Leave' || $leaf['type'] == 'Half Day' || $leaf['type'] == 'Work From Home' || $leaf['type'] == 'On Duty') && $status_text == 'Absent') {
+                                                if ($leaf['type'] == 'Work From Home')
+                                                    $status_text = "WFH";
+                                                elseif ($leaf['type'] == 'On Duty')
+                                                    $status_text = "On Duty";
+                                                elseif ($leaf['type'] == 'Half Day')
+                                                    $status_text = "Half Day";
+                                                else
+                                                    $status_text = "On Leave";
+
                                                 $status_class = "status-excused";
                                                 $is_excused = true;
                                             }
                                         }
                                     }
                                     ?>
+                                    <?php
+                                    $form_id = 'form_' . $date_str;
+                                    ?>
                                     <tr>
                                         <td><strong><?php echo date('M d', $current); ?></strong></td>
-                                        <td><?php echo $first_login != '-' ? date('H:i', strtotime($first_login)) : '-'; ?>
+
+                                        <!-- Editable Login Time -->
+                                        <td>
+                                            <input type="time" name="new_login_time" form="<?php echo $form_id; ?>"
+                                                value="<?php echo $first_login != '-' ? date('H:i', strtotime($first_login)) : ''; ?>"
+                                                class="form-control"
+                                                style="font-size: 0.85rem; padding: 0.2rem; width: 110px;">
                                         </td>
-                                        <td><?php echo $last_logout != '-' && $last_logout ? date('H:i', strtotime($last_logout)) : '-'; ?>
+
+                                        <!-- Editable Logout Time -->
+                                        <td>
+                                            <input type="time" name="new_logout_time" form="<?php echo $form_id; ?>"
+                                                value="<?php echo $last_logout != '-' && $last_logout ? date('H:i', strtotime($last_logout)) : ''; ?>"
+                                                class="form-control"
+                                                style="font-size: 0.85rem; padding: 0.2rem; width: 110px;">
                                         </td>
+
                                         <td><?php echo $total_hours > 0 ? $total_hours . 'h' : '-'; ?></td>
                                         <td><?php echo $leaf_note; ?></td>
                                         <td class="<?php echo $status_class; ?>"><?php echo $status_text; ?></td>
                                         <td>
-                                            <form method="post" class="flex gap-2 items-center">
+                                            <form method="post" id="<?php echo $form_id; ?>"
+                                                class="flex gap-2 items-center">
                                                 <input type="hidden" name="action_date" value="<?php echo $date_str; ?>">
-                                                <input type="text" name="admin_comment" placeholder="Reason..."
+                                                <input type="text" name="admin_comment" placeholder="Note..."
                                                     class="form-control"
-                                                    style="width: 120px; font-size: 0.8rem; padding: 0.25rem;">
+                                                    style="width: 100px; font-size: 0.8rem; padding: 0.25rem;">
 
                                                 <select name="action_type" class="form-control"
-                                                    style="width: auto; font-size: 0.8rem; padding: 0.25rem;">
+                                                    style="width: 140px; font-size: 0.8rem; padding: 0.25rem;">
+                                                    <option value="update_time">Update Time</option>
                                                     <option value="grant_permission">Excuse (Permission)</option>
+                                                    <option value="mark_half_leave">Mark Half Day</option>
                                                     <option value="mark_full_leave">Mark Full Leave</option>
+                                                    <option value="mark_wfh">Mark WFH</option>
+                                                    <option value="mark_on_duty">Mark On Duty</option>
+                                                    <option value="mark_absent">Mark Absent</option>
                                                 </select>
 
                                                 <button type="submit" class="btn btn-primary text-xs"
-                                                    style="padding: 0.25rem 0.5rem;">Update</button>
+                                                    style="padding: 0.25rem 0.5rem;">Save</button>
                                             </form>
                                         </td>
                                     </tr>

@@ -38,28 +38,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             VALUES ('$user_id', '$project_id', '$date', '$description', '$status', '$minutes')";
 
     if (mysqli_query($conn, $sql)) {
-        // Auto-Clock Out Logic
-        $date = date('Y-m-d');
-        $check_att = "SELECT id, login_time FROM attendance WHERE user_id = '$user_id' AND date = '$date' AND logout_time IS NULL ORDER BY id DESC LIMIT 1";
-        $att_result = mysqli_query($conn, $check_att);
-
-        if (mysqli_num_rows($att_result) > 0) {
-            $att_row = mysqli_fetch_assoc($att_result);
-            $attendance_id = $att_row['id'];
-            $login_time = strtotime($att_row['login_time']);
-            $logout_time_str = date('H:i:s');
-            $logout_time = strtotime($logout_time_str);
-
-            // Calculate total hours
-            $duration_seconds = $logout_time - $login_time;
-            $total_work_hours = round($duration_seconds / 3600, 2);
-
-            $update_sql = "UPDATE attendance SET logout_time = '$logout_time_str', total_work_hours = '$total_work_hours' WHERE id = '$attendance_id'";
-            mysqli_query($conn, $update_sql);
-            $_SESSION['message'] = "Daily Log Submitted and Clocked Out Successfully!";
-        } else {
-            $_SESSION['message'] = "Daily Log Submitted Successfully!";
-        }
+        $_SESSION['message'] = "Work Log Added Successfully!";
     } else {
         $_SESSION['error'] = "Error submitting log: " . mysqli_error($conn);
     }

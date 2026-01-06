@@ -42,7 +42,8 @@ if (mysqli_num_rows($result) == 0) {
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="logo" style="color: white; font-size: 1.5rem;">SmartFusion Team</div>
+                <img src="assets/logo.png" alt="SmartFusion" class="logo-img">
+                <span class="logo-text">SmartFusion</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="employee_dashboard.php" class="nav-item">Dashboard</a>

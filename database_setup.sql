@@ -1,6 +1,8 @@
 -- Database Creation
-CREATE DATABASE IF NOT EXISTS teampulse_db;
-USE teampulse_db;
+-- NOTE: On InfinityFree, you create the database in the Control Panel.
+-- Do not run CREATE DATABASE here.
+-- CREATE DATABASE IF NOT EXISTS teampulse_db;
+-- USE teampulse_db;
 
 -- 1. Users Table
 CREATE TABLE IF NOT EXISTS users (

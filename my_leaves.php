@@ -15,6 +15,7 @@ $result = mysqli_query($conn, $sql);
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,13 +23,15 @@ $result = mysqli_query($conn, $sql);
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
 
     <div class="dashboard-container">
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="logo" style="color: white; font-size: 1.5rem;">SmartFusion Team</div>
+                <img src="assets/logo.png" alt="SmartFusion" class="logo-img">
+                <span class="logo-text">SmartFusion</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="employee_dashboard.php" class="nav-item">Dashboard</a>
@@ -52,20 +55,24 @@ $result = mysqli_query($conn, $sql);
             </header>
 
             <div class="page-content">
-                
-                <?php if(isset($_SESSION['message'])): ?>
-                    <div style="background-color: #DCFCE7; color: #166534; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
-                        <?php echo $_SESSION['message']; unset($_SESSION['message']); ?>
+
+                <?php if (isset($_SESSION['message'])): ?>
+                    <div
+                        style="background-color: #DCFCE7; color: #166534; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                        <?php echo $_SESSION['message'];
+                        unset($_SESSION['message']); ?>
                     </div>
                 <?php endif; ?>
-                <?php if(isset($_SESSION['error'])): ?>
-                    <div style="background-color: #FEE2E2; color: #991B1B; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
-                        <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
+                <?php if (isset($_SESSION['error'])): ?>
+                    <div
+                        style="background-color: #FEE2E2; color: #991B1B; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                        <?php echo $_SESSION['error'];
+                        unset($_SESSION['error']); ?>
                     </div>
                 <?php endif; ?>
 
                 <div class="grid-3" style="grid-template-columns: 1fr 1.5fr;">
-                    
+
                     <!-- Apply Form -->
                     <div class="card">
                         <h4 class="mb-4">Apply for Leave / Permission</h4>
@@ -78,7 +85,7 @@ $result = mysqli_query($conn, $sql);
                                     <option value="Half Day">Half Day</option>
                                 </select>
                             </div>
-                            
+
                             <div class="flex gap-4">
                                 <div class="form-group" style="flex:1;">
                                     <label class="form-label">Start Date</label>
@@ -93,7 +100,9 @@ $result = mysqli_query($conn, $sql);
 
                             <div class="form-group">
                                 <label class="form-label">Reason</label>
-                                <textarea name="reason" class="form-control" rows="3" placeholder="Examples: Doctor Appointment, Personal Emergency, etc." required></textarea>
+                                <textarea name="reason" class="form-control" rows="3"
+                                    placeholder="Examples: Doctor Appointment, Personal Emergency, etc."
+                                    required></textarea>
                             </div>
 
                             <button type="submit" class="btn btn-primary">Submit Request</button>
@@ -115,23 +124,23 @@ $result = mysqli_query($conn, $sql);
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php if(mysqli_num_rows($result) > 0): ?>
-                                        <?php while($row = mysqli_fetch_assoc($result)): ?>
+                                    <?php if (mysqli_num_rows($result) > 0): ?>
+                                        <?php while ($row = mysqli_fetch_assoc($result)): ?>
                                             <tr>
                                                 <td><?php echo date('M d', strtotime($row['created_at'])); ?></td>
                                                 <td><?php echo $row['type']; ?></td>
                                                 <td>
-                                                    <?php 
-                                                        echo date('M d', strtotime($row['start_date']));
-                                                        if($row['end_date'] != $row['start_date']) {
-                                                            echo ' - ' . date('M d', strtotime($row['end_date']));
-                                                        }
+                                                    <?php
+                                                    echo date('M d', strtotime($row['start_date']));
+                                                    if ($row['end_date'] != $row['start_date']) {
+                                                        echo ' - ' . date('M d', strtotime($row['end_date']));
+                                                    }
                                                     ?>
                                                 </td>
                                                 <td>
-                                                    <?php if($row['status'] == 'Approved'): ?>
+                                                    <?php if ($row['status'] == 'Approved'): ?>
                                                         <span class="badge badge-success">Approved</span>
-                                                    <?php elseif($row['status'] == 'Rejected'): ?>
+                                                    <?php elseif ($row['status'] == 'Rejected'): ?>
                                                         <span class="badge badge-danger">Rejected</span>
                                                     <?php else: ?>
                                                         <span class="badge badge-warning">Pending</span>
@@ -143,7 +152,9 @@ $result = mysqli_query($conn, $sql);
                                             </tr>
                                         <?php endwhile; ?>
                                     <?php else: ?>
-                                        <tr><td colspan="5" class="text-center text-muted">No requests found.</td></tr>
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">No requests found.</td>
+                                        </tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
@@ -166,4 +177,5 @@ $result = mysqli_query($conn, $sql);
         }
     </script>
 </body>
+
 </html>

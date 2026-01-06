@@ -55,6 +55,14 @@ $first_login_query = "SELECT MIN(login_time) as first_login FROM attendance WHER
 $first_login_result = mysqli_query($conn, $first_login_query);
 $first_login_row = mysqli_fetch_assoc($first_login_result);
 $first_login_time = $first_login_row['first_login'] ?? null;
+
+// 5. Fetch Today's Work Logs
+$todays_logs_query = "SELECT l.*, p.name as project_name 
+                      FROM daily_work_logs l 
+                      LEFT JOIN projects p ON l.project_id = p.id 
+                      WHERE l.user_id = '$user_id' AND l.date = '$date' 
+                      ORDER BY l.created_at DESC";
+$todays_logs_result = mysqli_query($conn, $todays_logs_query);
 ?>
 <script>
     const FIRST_LOGIN_TIME = "<?php echo $first_login_time; ?>"; // e.g. 09:00:00 or null
@@ -76,7 +84,8 @@ $first_login_time = $first_login_row['first_login'] ?? null;
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="logo" style="color: white; font-size: 1.5rem;">SmartFusion Team</div>
+                <img src="assets/logo.png" alt="SmartFusion" class="logo-img">
+                <span class="logo-text">SmartFusion</span>
             </div>
             <nav class="sidebar-nav">
                 <a href="employee_dashboard.php" class="nav-item active">Dashboard</a>
@@ -231,9 +240,49 @@ $first_login_time = $first_login_row['first_login'] ?? null;
                         </div>
 
                         <div class="text-right" style="text-align: right;">
-                            <button type="submit" class="btn btn-primary">Submit Log & Clock Out</button>
+                            <button type="submit" class="btn btn-primary">Add Work Log</button>
                         </div>
                     </form>
+                </div>
+
+                <!-- NEW SECTION: Today's Logs -->
+                <h3 class="mb-4">Today's Work Logs</h3>
+                <div class="card">
+                    <table class="table" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Time</th>
+                                <th style="text-align: right;">Logged At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (mysqli_num_rows($todays_logs_result) > 0): ?>
+                                <?php while ($log = mysqli_fetch_assoc($todays_logs_result)): ?>
+                                    <tr>
+                                        <td><span
+                                                class="font-semibold"><?php echo htmlspecialchars($log['project_name']); ?></span>
+                                        </td>
+                                        <td><?php echo htmlspecialchars($log['description']); ?></td>
+                                        <td><span
+                                                class="badge badge-<?php echo strtolower(str_replace(' ', '-', $log['status'])); ?>"><?php echo $log['status']; ?></span>
+                                        </td>
+                                        <td><?php echo floor($log['time_spent_minutes'] / 60) . 'h ' . ($log['time_spent_minutes'] % 60) . 'm'; ?>
+                                        </td>
+                                        <td style="text-align: right;" class="text-muted text-sm">
+                                            <?php echo date('h:i A', strtotime($log['created_at'])); ?></td>
+                                    </tr>
+                                <?php endwhile; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted" style="padding: 2rem;">No logs submitted
+                                        today.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
 
                 <script>

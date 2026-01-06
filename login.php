@@ -58,8 +58,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <div class="login-page">
         <div class="card login-card">
             <div class="login-header">
-                <div class="logo" style="font-size: 2rem;">SmartFusion Team</div>
-                <p class="text-muted">Smart Fusion Corporate Solutions</p>
+                <div class="logo-container">
+                    <img src="assets/logo.png" alt="SmartFusion Logo" class="logo-img">
+                </div>
+                <!-- <p class="text-muted">Smart Fusion Corporate Solutions</p> -->
+                <h2 class="logo-text-login">SmartFusion</h2>
             </div>
 
             <?php if ($error_msg): ?>

@@ -60,8 +60,9 @@ $logs_result = mysqli_query($conn, $logs_sql);
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="logo" style="color: white; font-size: 1.5rem;">SmartFusion Team</div>
-                <div class="text-sm text-muted">Admin Panel</div>
+                <img src="assets/logo.png" alt="SmartFusion" class="logo-img">
+                <span class="logo-text">SmartFusion</span>
+                <div class="text-sm text-muted" style="margin-left: auto;">Admin</div>
             </div>
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item active">Dashboard</a>
