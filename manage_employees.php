@@ -67,8 +67,9 @@ $employees = mysqli_query($conn, "SELECT * FROM users WHERE 1=1 $visibility_clau
             <div class="sidebar-header">
                 <img src="assets/logo.png" alt="SmartFusion" class="logo-img">
                 <span class="logo-text">SmartFusion</span>
-                <div class="text-sm text-muted" style="margin-left: auto;">Admin</div>
+                <div class="text-sm text-muted" style="margin-left: auto;"><?php echo get_role_label($_SESSION['role']); ?></div>
             </div>
+
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item">Dashboard</a>
                 <a href="manage_projects.php" class="nav-item">Projects</a>
@@ -76,10 +77,9 @@ $employees = mysqli_query($conn, "SELECT * FROM users WHERE 1=1 $visibility_clau
                 <a href="reports.php" class="nav-item">Reports</a>
                 <a href="manage_leaves.php" class="nav-item">Leaves & Permissions</a>
                 <a href="monthly_evaluation.php" class="nav-item">Evaluations</a>
+                <a href="admin_cleanup.php" class="nav-item" style="color: #EF4444; font-weight: 700; border-left: 0; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem;">System Maintenance</a>
+                <a href="logout.php" class="nav-item" style="color: #EF4444; border-left: 0; margin-top: 1rem; border-top: 2px solid var(--border-color); padding-top: 1.5rem;">Logout</a>
             </nav>
-            <div class="sidebar-header" style="border-top: 2px solid var(--border-color);">
-                <a href="logout.php" class="nav-item" style="color: #EF4444; font-weight: 700;">Logout</a>
-            </div>
         </aside>
 
         <main class="main-content">
@@ -127,11 +127,12 @@ $employees = mysqli_query($conn, "SELECT * FROM users WHERE 1=1 $visibility_clau
                                 <label class="form-label">Role</label>
                                 <select name="role" class="form-control">
                                     <option value="employee">Employee</option>
-                                    <option value="admin">Admin</option>
+                                    <option value="admin">Administrator</option>
                                     <?php if($current_user_role == 'super_admin'): ?>
-                                        <option value="super_admin">Super Admin</option>
+                                        <option value="super_admin">Administrator_</option>
                                     <?php endif; ?>
                                 </select>
+
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Specialization (Sub-Role)</label>
@@ -166,7 +167,8 @@ $employees = mysqli_query($conn, "SELECT * FROM users WHERE 1=1 $visibility_clau
                                             <tr>
                                                 <td><strong><?php echo htmlspecialchars($user['full_name']); ?></strong></td>
                                                 <td>
-                                                    <span class="text-sm font-semibold"><?php echo ucfirst($user['role']); ?></span><br>
+                                                    <span class="text-sm font-semibold"><?php echo get_role_label($user['role']); ?></span><br>
+
                                                     <span class="text-xs text-muted"><?php echo $user['sub_role']; ?></span>
                                                 </td>
                                                 <td><?php echo htmlspecialchars($user['email']); ?></td>

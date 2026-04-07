@@ -88,11 +88,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <!-- Helper for Demo -->
                 <!-- Credentials removed as requested -->
 
-                <div class="form-group flex justify-between">
-                    <label class="flex items-center gap-2 text-sm text-sub">
+                <div class="form-group flex justify-between items-center flex-wrap gap-2">
+                    <label class="flex items-center gap-2 text-sm text-sub nowrap">
                         <input type="checkbox"> Remember me
                     </label>
-                    <a href="#" class="text-sm text-gold hover:underline" style="color: var(--primary-color);">Forgot password?</a>
+                    <a href="forgot_password.php" class="text-sm text-gold hover:underline" style="color: var(--primary-color);">Forgot password?</a>
                 </div>
 
                 <button type="submit" class="btn btn-primary w-full">Sign In</button>

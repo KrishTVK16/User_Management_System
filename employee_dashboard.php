@@ -38,11 +38,19 @@ if ($is_clocked_in) {
     }
 }
 
-// 2. Get My Projects (Based on Role)
+// 2. Get My Projects (Hierarchical)
 if ($sub_role == 'Tester') {
-    $projects_query = "SELECT * FROM projects WHERE tester_id = '$user_id' AND status IN ('Testing', 'Corrected') ORDER BY created_at DESC";
+    $projects_query = "SELECT p.*, m.name as master_name 
+                       FROM projects p 
+                       LEFT JOIN projects m ON p.parent_id = m.id
+                       WHERE p.tester_id = '$user_id' AND p.status IN ('Testing', 'Corrected') 
+                       ORDER BY m.name ASC, p.name ASC";
 } else {
-    $projects_query = "SELECT * FROM projects WHERE developer_id = '$user_id' AND status IN ('Assigned', 'Development Initialized', 'Correction Required') ORDER BY created_at DESC";
+    $projects_query = "SELECT p.*, m.name as master_name 
+                       FROM projects p 
+                       LEFT JOIN projects m ON p.parent_id = m.id
+                       WHERE p.developer_id = '$user_id' AND p.status IN ('Assigned', 'Development Initialized', 'Correction Required') 
+                       ORDER BY m.name ASC, p.name ASC";
 }
 $projects_result = mysqli_query($conn, $projects_query);
 
@@ -99,10 +107,8 @@ $todays_logs_result = mysqli_query($conn, $todays_logs_query);
                 <a href="my_leaves.php" class="nav-item">Leaves & Permissions</a>
                 <a href="my_history.php" class="nav-item">History</a>
                 <a href="profile.php" class="nav-item">Profile</a>
+                <a href="logout.php" class="nav-item" style="color: #EF4444; border-left: 0; margin-top: 1rem; border-top: 2px solid var(--border-color); padding-top: 1.5rem;">Logout</a>
             </nav>
-            <div class="sidebar-header" style="border-top: 2px solid var(--border-color);">
-                <a href="logout.php" class="nav-item" style="color: #EF4444; font-weight: 700;">Logout</a>
-            </div>
         </aside>
 
         <!-- Main Content -->
@@ -230,9 +236,10 @@ $todays_logs_result = mysqli_query($conn, $todays_logs_query);
                             <div class="card mb-4">
                                 <div class="flex justify-between items-center mb-4">
                                     <div>
+                                        <div class="text-xs text-primary font-bold mb-1"><?php echo htmlspecialchars($p['master_name'] ?: 'Standalone Project'); ?></div>
                                         <h4 class="mb-1"><?php echo htmlspecialchars($p['name']); ?></h4>
                                         <div class="flex gap-4">
-                                            <span class="text-sm text-muted">Client: <strong><?php echo htmlspecialchars($p['client_name']); ?></strong></span>
+                                            <span class="text-sm text-muted">Type: <strong><?php echo htmlspecialchars($p['project_type'] ?: 'Static HTML'); ?></strong></span>
                                             <?php if($p['project_link']): ?>
                                                 <a href="<?php echo htmlspecialchars($p['project_link']); ?>" target="_blank" class="text-sm text-primary">View Project Link</a>
                                             <?php endif; ?>
@@ -243,6 +250,13 @@ $todays_logs_result = mysqli_query($conn, $todays_logs_query);
                                         <?php if($p['is_delayed']): ?><br><span class="text-xs text-danger font-bold">DELAYED</span><?php endif; ?>
                                     </div>
                                 </div>
+
+                                <?php if($p['requirements']): ?>
+                                    <div class="mb-4 p-3" style="background: rgba(212, 175, 55, 0.05); border: 1px dashed var(--primary-color); border-radius: var(--radius-sm);">
+                                        <div class="text-xs font-bold text-gold mb-1">SPECIFIC REQUIREMENTS:</div>
+                                        <div class="text-sm text-main"><?php echo nl2br(htmlspecialchars($p['requirements'])); ?></div>
+                                    </div>
+                                <?php endif; ?>
 
                                 <div class="p-4 bg-gray-50 border rounded-lg mb-4" style="background: #1B2B3D; padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
                                     
@@ -330,12 +344,21 @@ $todays_logs_result = mysqli_query($conn, $todays_logs_query);
                                 <select name="project_id" class="form-control" required>
                                     <option value="">Select a project...</option>
                                     <?php
-                                    mysqli_data_seek($projects_result, 0); // Reset pointer
-                                    while ($proj = mysqli_fetch_assoc($projects_result)): ?>
+                                    mysqli_data_seek($projects_result, 0);
+                                    $current_master = "";
+                                    while ($proj = mysqli_fetch_assoc($projects_result)): 
+                                        if ($proj['master_name'] !== $current_master) {
+                                            if ($current_master !== "") echo "</optgroup>";
+                                            $current_master = $proj['master_name'] ?: 'General Projects';
+                                            echo "<optgroup label='" . htmlspecialchars($current_master) . "'>";
+                                        }
+                                    ?>
                                         <option value="<?php echo $proj['id']; ?>">
                                             <?php echo htmlspecialchars($proj['name']); ?>
                                         </option>
-                                    <?php endwhile; ?>
+                                    <?php endwhile; 
+                                    if ($current_master !== "") echo "</optgroup>";
+                                    ?>
                                 </select>
                             </div>
                             <div class="form-group" style="flex: 1; min-width: 200px;">

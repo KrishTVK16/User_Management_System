@@ -1,6 +1,7 @@
 <?php
 // run_migration.php
 require('includes/db_connect.php');
+mysqli_report(MYSQLI_REPORT_OFF);
 
 $queries = [
     // 1. Users Table Updates
@@ -65,8 +66,24 @@ $queries = [
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )",
-    "UPDATE projects SET status = 'Assigned' WHERE status NOT IN ('Assigned', 'Development Initialized', 'Development Completed', 'Testing', 'Correction Required', 'Corrected', 'Finalized', 'Client Submitted')"
+    "ALTER TABLE users ADD COLUMN reset_token_hash VARCHAR(64) NULL",
+    "ALTER TABLE users ADD COLUMN reset_token_expiry DATETIME NULL",
+    "UPDATE projects SET status = 'Assigned' WHERE status NOT IN ('Assigned', 'Development Initialized', 'Development Completed', 'Testing', 'Correction Required', 'Corrected', 'Finalized', 'Client Submitted')",
+    
+    // 4. Hierarchical Project Updates
+    "ALTER TABLE projects ADD COLUMN parent_id INT NULL AFTER id",
+    "ALTER TABLE projects ADD COLUMN requirements TEXT AFTER description",
+    "ALTER TABLE projects ADD COLUMN project_type VARCHAR(100) DEFAULT 'Static HTML' AFTER requirements",
+    "ALTER TABLE projects ADD COLUMN estimated_days INT DEFAULT 2 AFTER project_type",
+    "ALTER TABLE projects ADD CONSTRAINT fk_project_parent FOREIGN KEY (parent_id) REFERENCES projects(id) ON DELETE CASCADE",
+    "CREATE INDEX idx_project_parent ON projects(parent_id)",
+    "INSERT INTO projects (name, description, status) VALUES ('March 2026 Slot', 'Master project for March website rollout', 'Assigned')",
+    
+    // 5. Rename Administrator Roles in Database
+    "UPDATE users SET full_name = 'Administrator' WHERE full_name = 'Main Administrator'",
+    "UPDATE users SET full_name = 'Administrator_' WHERE full_name = 'Super Administrator'"
 ];
+
 
 echo "<h3>Starting Migration...</h3>";
 
@@ -75,14 +92,26 @@ foreach ($queries as $sql) {
         echo "<p style='color: green;'>✅ Executed: " . substr($sql, 0, 80) . "...</p>";
     } else {
         $errno = mysqli_errno($conn);
-        // Error 1060: Duplicate column name
-        // Error 1061: Duplicate key name
-        // Error 1091: Can't DROP (if applicable)
-        // Error 1050: Table already exists (handled by IF NOT EXISTS)
-        if ($errno == 1060 || $errno == 1061) {
+        $error_msg = mysqli_error($conn);
+
+        // Common "Already Exists" error codes:
+        // 1060: Duplicate column, 1061: Duplicate index, 121/1022/1005: Duplicate constraint/foreign key
+        // 1050: Table exists, 1062: Duplicate entry
+        $skipped_codes = [1050, 1060, 1061, 1062, 121, 1022, 1005];
+        
+        // Also check if the error message itself mentions "Duplicate" or "already exists"
+        $is_duplicate = false;
+        foreach (['duplicate', 'already exists', 'exists'] as $keyword) {
+            if (stripos($error_msg, $keyword) !== false) {
+                $is_duplicate = true;
+                break;
+            }
+        }
+
+        if (in_array($errno, $skipped_codes) || $is_duplicate) {
             echo "<p style='color: orange;'>⚠️ Skipped (Already exists): " . substr($sql, 0, 80) . "...</p>";
         } else {
-            echo "<p style='color: red;'>❌ Error: " . mysqli_error($conn) . "<br>Query: <code>$sql</code></p>";
+            echo "<p style='color: red;'>❌ Error: $error_msg (Code: $errno)<br>Query: <code>$sql</code></p>";
         }
     }
 }

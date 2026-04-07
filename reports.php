@@ -3,11 +3,24 @@
 session_start();
 require('includes/db_connect.php');
 require('includes/auth_session.php');
+require('includes/project_functions.php');
+
 
 check_login();
 check_admin();
 
 $full_name = $_SESSION['full_name'];
+
+// Fetch Master Project Progress
+$progress_query = "SELECT m.name, 
+                          COUNT(p.id) as total_sites,
+                          SUM(CASE WHEN p.status = 'Finalized' THEN 1 ELSE 0 END) as completed_sites
+                   FROM projects m
+                   JOIN projects p ON p.parent_id = m.id
+                   WHERE m.parent_id IS NULL
+                   GROUP BY m.id
+                   ORDER BY m.created_at DESC";
+$progress_result = mysqli_query($conn, $progress_query);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -28,8 +41,9 @@ $full_name = $_SESSION['full_name'];
             <div class="sidebar-header">
                 <img src="assets/logo.png" alt="SmartFusion" class="logo-img">
                 <span class="logo-text">SmartFusion</span>
-                <div class="text-sm text-muted" style="margin-left: auto;">Admin</div>
+                <div class="text-sm text-muted" style="margin-left: auto;"><?php echo get_role_label($_SESSION['role']); ?></div>
             </div>
+
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item">Dashboard</a>
                 <a href="manage_projects.php" class="nav-item">Projects</a>
@@ -37,10 +51,9 @@ $full_name = $_SESSION['full_name'];
                 <a href="reports.php" class="nav-item active">Reports</a>
                 <a href="manage_leaves.php" class="nav-item">Leaves & Permissions</a>
                 <a href="monthly_evaluation.php" class="nav-item">Evaluations</a>
+                <a href="admin_cleanup.php" class="nav-item" style="color: #EF4444; font-weight: 700; border-left: 0; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem;">System Maintenance</a>
+                <a href="logout.php" class="nav-item" style="color: #EF4444; border-left: 0; margin-top: 1rem; border-top: 2px solid var(--border-color); padding-top: 1.5rem;">Logout</a>
             </nav>
-            <div class="sidebar-header" style="border-top: 1px solid #334155;">
-                <a href="logout.php" class="nav-item" style="color: #EF4444;">Logout</a>
-            </div>
         </aside>
 
         <main class="main-content">
@@ -55,6 +68,32 @@ $full_name = $_SESSION['full_name'];
             </header>
 
             <div class="page-content">
+
+                <h3 class="mb-4">Project Rollout Progress</h3>
+                <div class="grid-1 mb-8">
+                    <?php if (mysqli_num_rows($progress_result) > 0): ?>
+                        <?php while($row = mysqli_fetch_assoc($progress_result)): 
+                            $percent = $row['total_sites'] > 0 ? round(($row['completed_sites'] / $row['total_sites']) * 100) : 0;
+                        ?>
+                            <div class="card">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="text-gold"><?php echo htmlspecialchars($row['name']); ?></h4>
+                                    <span class="text-sm font-bold"><?php echo $row['completed_sites']; ?> / <?php echo $row['total_sites']; ?> Sites Finalized</span>
+                                </div>
+                                <div style="width: 100%; height: 12px; background: #1B2B3D; border-radius: 6px; overflow: hidden; border: 1px solid var(--border-color);">
+                                    <div style="width: <?php echo $percent; ?>%; height: 100%; background: var(--primary-color); transition: width 1s ease-in-out;"></div>
+                                </div>
+                                <div class="text-right mt-2">
+                                    <span class="text-xs text-muted"><?php echo $percent; ?>% Overall Completion</span>
+                                </div>
+                            </div>
+                        <?php endwhile; ?>
+                    <?php else: ?>
+                        <div class="card text-center">
+                            <p class="text-muted">No master projects with sub-projects found.</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
 
                 <h3 class="mb-4">Export Data</h3>
                 <p class="text-muted mb-8">Download comprehensive records in CSV format.</p>

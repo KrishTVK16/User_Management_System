@@ -3,18 +3,26 @@
 session_start();
 require('includes/db_connect.php');
 require('includes/auth_session.php');
+require('includes/project_functions.php');
+
 
 check_login();
 check_admin();
 
+$user_role_session = $_SESSION['role'];
+$visibility_clause = get_user_visibility_clause($user_role_session);
+// Since results are aliased with 'u', and the helper returns " AND role != '...' ", we need to handle the prefix if necessary.
+// But wait, the helper returns " AND role != 'super_admin'". In manage_leaves.php, the user table is joined as 'u'.
+// So I should adjust the visibility clause or the SQL.
+$visibility_clause = str_replace(' role ', ' u.role ', $visibility_clause);
+
+
 // Fetch Pending Requests
-// Shows only requests that haven't been acted upon yet
-$pending_sql = "SELECT l.*, u.full_name FROM leave_requests l JOIN users u ON l.user_id = u.id WHERE l.status = 'Pending' ORDER BY l.created_at ASC";
+$pending_sql = "SELECT l.*, u.full_name FROM leave_requests l JOIN users u ON l.user_id = u.id WHERE l.status = 'Pending' $visibility_clause ORDER BY l.created_at ASC";
 $pending_result = mysqli_query($conn, $pending_sql);
 
 // Fetch History
-// Shows past 50 processed requests for reference
-$history_sql = "SELECT l.*, u.full_name FROM leave_requests l JOIN users u ON l.user_id = u.id WHERE l.status != 'Pending' ORDER BY l.created_at DESC LIMIT 50";
+$history_sql = "SELECT l.*, u.full_name FROM leave_requests l JOIN users u ON l.user_id = u.id WHERE l.status != 'Pending' $visibility_clause ORDER BY l.created_at DESC LIMIT 50";
 $history_result = mysqli_query($conn, $history_sql);
 ?>
 <!DOCTYPE html>
@@ -34,8 +42,9 @@ $history_result = mysqli_query($conn, $history_sql);
             <div class="sidebar-header">
                 <img src="assets/logo.png" alt="SmartFusion" class="logo-img">
                 <span class="logo-text">SmartFusion</span>
-                <div class="text-sm text-muted" style="margin-left: auto;">Admin</div>
+                <div class="text-sm text-muted" style="margin-left: auto;"><?php echo get_role_label($_SESSION['role']); ?></div>
             </div>
+
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item">Dashboard</a>
                 <a href="manage_projects.php" class="nav-item">Projects</a>
@@ -43,10 +52,9 @@ $history_result = mysqli_query($conn, $history_sql);
                 <a href="reports.php" class="nav-item">Reports</a>
                 <a href="manage_leaves.php" class="nav-item active">Leaves & Permissions</a>
                 <a href="monthly_evaluation.php" class="nav-item">Evaluations</a>
+                <a href="admin_cleanup.php" class="nav-item" style="color: #EF4444; font-weight: 700; border-left: 0; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem;">System Maintenance</a>
+                <a href="logout.php" class="nav-item" style="color: #EF4444; border-left: 0; margin-top: 1rem; border-top: 2px solid var(--border-color); padding-top: 1.5rem;">Logout</a>
             </nav>
-            <div class="sidebar-header" style="border-top: 1px solid #334155;">
-                <a href="logout.php" class="nav-item" style="color: #EF4444;">Logout</a>
-            </div>
         </aside>
 
         <main class="main-content">

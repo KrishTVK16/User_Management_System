@@ -3,6 +3,8 @@
 session_start();
 require('includes/db_connect.php');
 require('includes/auth_session.php');
+require('includes/project_functions.php');
+
 
 check_login();
 
@@ -62,10 +64,8 @@ $user = mysqli_fetch_assoc(mysqli_query($conn, $user_sql));
                 <a href="my_leaves.php" class="nav-item">Leaves & Permissions</a>
                 <a href="my_history.php" class="nav-item">History</a>
                 <a href="profile.php" class="nav-item active">Profile</a>
+                <a href="logout.php" class="nav-item" style="color: #EF4444; border-left: 0; margin-top: 1rem; border-top: 2px solid var(--border-color); padding-top: 1.5rem;">Logout</a>
             </nav>
-            <div class="sidebar-header" style="border-top: 1px solid #334155;">
-                <a href="logout.php" class="nav-item" style="color: #EF4444;">Logout</a>
-            </div>
         </aside>
 
         <main class="main-content">
@@ -113,9 +113,10 @@ $user = mysqli_fetch_assoc(mysqli_query($conn, $user_sql));
                         </div>
                         <div class="form-group">
                             <label class="form-label">Role</label>
-                            <input type="text" class="form-control" value="<?php echo ucfirst($user['role']); ?>"
+                            <input type="text" class="form-control" value="<?php echo get_role_label($user['role']); ?>"
                                 disabled style="background: #F1F5F9;">
                         </div>
+
                         <p class="text-muted text-sm mt-4">To change your name or email, please contact an
                             administrator.</p>
                     </div>

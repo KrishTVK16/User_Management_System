@@ -130,4 +130,17 @@ function get_user_visibility_clause($session_role) {
     if ($session_role == 'super_admin') return "";
     return " AND role != 'super_admin'";
 }
+
+/**
+ * Map internal roles to display names
+ */
+function get_role_label($role) {
+    $roles = [
+        'admin' => 'Administrator',
+        'super_admin' => 'Administrator_',
+        'employee' => 'Employee'
+    ];
+    return $roles[$role] ?? ucfirst($role);
+}
 ?>
+

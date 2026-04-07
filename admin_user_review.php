@@ -187,6 +187,7 @@ while ($row = mysqli_fetch_assoc($leaves_result)) {
                 <a href="reports.php" class="nav-item">Reports</a>
                 <a href="manage_leaves.php" class="nav-item">Leaves & Permissions</a>
                 <a href="monthly_evaluation.php" class="nav-item active">Evaluations</a>
+                <a href="logout.php" class="nav-item" style="color: #EF4444; border-left: 0; margin-top: 1rem; border-top: 2px solid var(--border-color); padding-top: 1.5rem;">Logout</a>
             </nav>
         </aside>
 

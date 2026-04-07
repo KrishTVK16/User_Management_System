@@ -3,6 +3,8 @@
 session_start();
 require('includes/db_connect.php');
 require('includes/auth_session.php');
+require('includes/project_functions.php');
+
 
 check_login();
 check_admin();
@@ -10,8 +12,11 @@ check_admin();
 $month = $_GET['month'] ?? date('m');
 $year = $_GET['year'] ?? date('Y');
 
-// Fetch all users
-$users_query = "SELECT id, full_name FROM users WHERE role != 'admin'";
+// Fetch all users (Excluding Admin and Super Admin roles from review lists)
+$user_role_session = $_SESSION['role'];
+$visibility_filter = ($user_role_session === 'super_admin') ? "" : " AND role NOT IN ('admin', 'super_admin')";
+$users_query = "SELECT id, full_name FROM users WHERE 1=1 $visibility_filter";
+
 $users_result = mysqli_query($conn, $users_query);
 ?>
 <!DOCTYPE html>
@@ -44,8 +49,9 @@ $users_result = mysqli_query($conn, $users_query);
             <div class="sidebar-header">
                 <img src="assets/logo.png" alt="SmartFusion" class="logo-img">
                 <span class="logo-text">SmartFusion</span>
-                <div class="text-sm text-muted" style="margin-left: auto;">Admin</div>
+                <div class="text-sm text-muted" style="margin-left: auto;"><?php echo get_role_label($_SESSION['role']); ?></div>
             </div>
+
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item">Dashboard</a>
                 <a href="manage_projects.php" class="nav-item">Projects</a>
@@ -53,6 +59,8 @@ $users_result = mysqli_query($conn, $users_query);
                 <a href="reports.php" class="nav-item">Reports</a>
                 <a href="manage_leaves.php" class="nav-item">Leaves & Permissions</a>
                 <a href="monthly_evaluation.php" class="nav-item active">Evaluations</a>
+                <a href="admin_cleanup.php" class="nav-item" style="color: #EF4444; font-weight: 700; border-left: 0; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem;">System Maintenance</a>
+                <a href="logout.php" class="nav-item" style="color: #EF4444; border-left: 0; margin-top: 1rem; border-top: 2px solid var(--border-color); padding-top: 1.5rem;">Logout</a>
             </nav>
         </aside>
 

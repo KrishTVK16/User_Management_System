@@ -51,10 +51,8 @@ if (mysqli_num_rows($result) == 0) {
                 <a href="my_leaves.php" class="nav-item">Leaves & Permissions</a>
                 <a href="my_history.php" class="nav-item">History</a>
                 <a href="profile.php" class="nav-item">Profile</a>
+                <a href="logout.php" class="nav-item" style="color: #EF4444; border-left: 0; margin-top: 1rem; border-top: 2px solid var(--border-color); padding-top: 1.5rem;">Logout</a>
             </nav>
-            <div class="sidebar-header" style="border-top: 1px solid #334155;">
-                <a href="logout.php" class="nav-item" style="color: #EF4444;">Logout</a>
-            </div>
         </aside>
 
         <main class="main-content">

@@ -65,12 +65,22 @@ $productivity_result = mysqli_query($conn, $productivity_sql);
 
 // --- ADMIN PERFORMANCE (Super Admin Only) ---
 $admin_perf_result = null;
+$logs_result = null;
 if ($user_role_session == 'super_admin') {
+    // Admin Performance
     $admin_perf_sql = "SELECT u.full_name, 
                        (SELECT COUNT(*) FROM project_history WHERE user_id = u.id AND action LIKE '%Assign%' AND DATE(created_at) = '$date') as assignments_today,
                        (SELECT COUNT(*) FROM projects WHERE status = 'Assigned') as pending_assignments
                        FROM users u WHERE u.role = 'admin'";
     $admin_perf_result = mysqli_query($conn, $admin_perf_sql);
+
+    // Recent Logs
+    $logs_sql = "SELECT l.*, u.full_name, p.name as project_name 
+                 FROM daily_work_logs l 
+                 JOIN users u ON l.user_id = u.id 
+                 JOIN projects p ON l.project_id = p.id 
+                 ORDER BY l.created_at DESC LIMIT 6";
+    $logs_result = mysqli_query($conn, $logs_sql);
 }
 ?>
 <!DOCTYPE html>
@@ -92,8 +102,9 @@ if ($user_role_session == 'super_admin') {
             <div class="sidebar-header">
                 <img src="assets/logo.png" alt="SmartFusion" class="logo-img">
                 <span class="logo-text">SmartFusion</span>
-                <div class="text-sm text-muted" style="margin-left: auto;">Admin</div>
+                <div class="text-sm text-muted" style="margin-left: auto;"><?php echo get_role_label($_SESSION['role']); ?></div>
             </div>
+
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item active">Dashboard</a>
                 <a href="manage_projects.php" class="nav-item">Projects</a>
@@ -101,10 +112,9 @@ if ($user_role_session == 'super_admin') {
                 <a href="reports.php" class="nav-item">Reports</a>
                 <a href="manage_leaves.php" class="nav-item">Leaves & Permissions</a>
                 <a href="monthly_evaluation.php" class="nav-item">Evaluations</a>
+                <a href="admin_cleanup.php" class="nav-item" style="color: #EF4444; font-weight: 700; border-left: 0; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem;">System Maintenance</a>
+                <a href="logout.php" class="nav-item" style="color: #EF4444; border-left: 0; margin-top: 1rem; border-top: 2px solid var(--border-color); padding-top: 1.5rem;">Logout</a>
             </nav>
-            <div class="sidebar-header" style="border-top: 2px solid var(--border-color);">
-                <a href="logout.php" class="nav-item" style="color: #EF4444; font-weight: 700;">Logout</a>
-            </div>
         </aside>
 
         <!-- Main Content -->
@@ -178,6 +188,7 @@ if ($user_role_session == 'super_admin') {
                 </div>
                 <?php endif; ?>
 
+                <?php if ($user_role_session == 'super_admin'): ?>
                 <div class="grid-2 mt-8">
                     <div class="card">
                         <h3>Developer Productivity (Today)</h3>
@@ -242,7 +253,7 @@ if ($user_role_session == 'super_admin') {
 
                 <h3>Recent Log Submissions</h3>
                 <div class="grid-3 mt-4" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
-                    <?php if (mysqli_num_rows($logs_result) > 0): ?>
+                    <?php if ($logs_result && mysqli_num_rows($logs_result) > 0): ?>
                         <?php while ($log = mysqli_fetch_assoc($logs_result)): ?>
                             <div class="card">
                                 <div class="flex justify-between items-start mb-2">
@@ -273,6 +284,7 @@ if ($user_role_session == 'super_admin') {
                         <p class="text-muted">No logs submitted yet.</p>
                     <?php endif; ?>
                 </div>
+                <?php endif; ?>
 
             </div>
         </main>
