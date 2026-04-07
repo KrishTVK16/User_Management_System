@@ -43,6 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <title>Forgot Password - SmartFusion Team</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css?v=1.1">
 </head>
