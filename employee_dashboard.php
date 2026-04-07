@@ -335,7 +335,20 @@ $todays_logs_result = mysqli_query($conn, $todays_logs_query);
                     <?php endif; ?>
                 </div>
 
-                <h3 class="mb-4">Submit Daily Work Log</h3>
+                <div class="flex justify-between items-center mb-4">
+                    <h3>Submit Daily Work Log</h3>
+                    <?php 
+                        $report_submitted = mysqli_num_rows($todays_logs_result) > 0;
+                    ?>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold uppercase text-muted">Daily Report:</span>
+                        <?php if($report_submitted): ?>
+                            <span class="badge badge-success" style="background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0;">SUBMITTED</span>
+                        <?php else: ?>
+                            <span class="badge" style="background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;">PENDING</span>
+                        <?php endif; ?>
+                    </div>
+                </div>
                 <div class="card mb-4">
                     <form action="actions/submit_log.php" method="post" onsubmit="return validateWorkHours(event)">
                         <div class="flex gap-4" style="flex-wrap: wrap;">

@@ -7,11 +7,19 @@ require('../includes/auth_session.php');
 check_login();
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $user_id = $_SESSION['user_id'];
-    $project_id = $_POST['project_id'];
-    $status = $_POST['status'];
-    $description = mysqli_real_escape_string($conn, $_POST['description']);
     $date = date('Y-m-d');
+
+    // ENFORCEMENT: Check if clocked in
+    $check_clock_in = "SELECT id FROM attendance WHERE user_id = '$user_id' AND date = '$date' AND logout_time IS NULL LIMIT 1";
+    $res_clock_in = mysqli_query($conn, $check_clock_in);
+    
+    if (mysqli_num_rows($res_clock_in) == 0) {
+        $_SESSION['error'] = "You must CLOCK IN before submitting a work log!";
+        header("Location: ../employee_dashboard.php");
+        exit();
+    }
+
+    $project_id = $_POST['project_id'];
 
     // Parse Time Spent string to minutes
     $time_input = strtolower($_POST['time_spent']);

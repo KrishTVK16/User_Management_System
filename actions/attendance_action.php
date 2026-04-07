@@ -28,9 +28,18 @@ if ($action == 'clock_in') {
     }
 
 } elseif ($action == 'clock_out') {
-    // Find active attendance record
     $sql = "SELECT id, login_time FROM attendance WHERE user_id = '$user_id' AND logout_time IS NULL ORDER BY id DESC LIMIT 1";
     $result = mysqli_query($conn, $sql);
+
+    // ENFORCEMENT: Check for daily work logs today
+    $check_logs = "SELECT id FROM daily_work_logs WHERE user_id = '$user_id' AND date = '$date'";
+    $res_logs = mysqli_query($conn, $check_logs);
+    
+    if (mysqli_num_rows($res_logs) == 0) {
+        $_SESSION['error'] = "You cannot clock out without submitting your daily report! Please add a work log first.";
+        header("Location: ../employee_dashboard.php");
+        exit();
+    }
 
     if ($row = mysqli_fetch_assoc($result)) {
         $attendance_id = $row['id'];
