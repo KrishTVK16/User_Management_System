@@ -4,8 +4,13 @@ session_start();
 require('includes/db_connect.php');
 require('includes/auth_session.php');
 
+require('includes/project_functions.php');
+
 check_login();
 check_admin();
+
+$current_user_role = $_SESSION['role'];
+$visibility_clause = get_user_visibility_clause($current_user_role);
 
 // Handle Add Employee
 $message = "";
@@ -20,23 +25,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     $check = "SELECT id FROM users WHERE username='$email' OR email='$email'";
     if (mysqli_num_rows(mysqli_query($conn, $check)) == 0) {
         $password_hash = password_hash($password_raw, PASSWORD_DEFAULT);
-        
+        $role = mysqli_real_escape_string($conn, $_POST['role'] ?? 'employee');
+        $sub_role = mysqli_real_escape_string($conn, $_POST['sub_role'] ?? 'None');
+
+        // Security check: only super_admin can create another super_admin
+        if ($role === 'super_admin' && $current_user_role !== 'super_admin') {
+            $role = 'admin'; // Downgrade if not authorized
+        }
+
         // We use email as the username for simplicity based on recent login changes
-        $sql = "INSERT INTO users (username, password_hash, full_name, email, role) 
-                VALUES ('$email', '$password_hash', '$full_name', '$email', 'employee')";
+        $sql = "INSERT INTO users (username, password_hash, full_name, email, role, sub_role) 
+                VALUES ('$email', '$password_hash', '$full_name', '$email', '$role', '$sub_role')";
         
         if (mysqli_query($conn, $sql)) {
-            $message = "Employee added successfully!";
+            $message = "User added successfully!";
         } else {
-            $error = "Error adding employee: " . mysqli_error($conn);
+            $error = "Error adding user: " . mysqli_error($conn);
         }
     } else {
         $error = "User with that email already exists.";
     }
 }
 
-// Fetch Employees
-$employees = mysqli_query($conn, "SELECT * FROM users WHERE role='employee' ORDER BY created_at DESC");
+// Fetch Employees (Filter based on visibility)
+$employees = mysqli_query($conn, "SELECT * FROM users WHERE 1=1 $visibility_clause ORDER BY created_at DESC");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -65,8 +77,8 @@ $employees = mysqli_query($conn, "SELECT * FROM users WHERE role='employee' ORDE
                 <a href="manage_leaves.php" class="nav-item">Leaves & Permissions</a>
                 <a href="monthly_evaluation.php" class="nav-item">Evaluations</a>
             </nav>
-            <div class="sidebar-header" style="border-top: 1px solid #334155;">
-                <a href="logout.php" class="nav-item" style="color: #EF4444;">Logout</a>
+            <div class="sidebar-header" style="border-top: 2px solid var(--border-color);">
+                <a href="logout.php" class="nav-item" style="color: #EF4444; font-weight: 700;">Logout</a>
             </div>
         </aside>
 
@@ -82,13 +94,13 @@ $employees = mysqli_query($conn, "SELECT * FROM users WHERE role='employee' ORDE
             <div class="page-content">
                 
                 <?php if($message): ?>
-                    <div style="background-color: #DCFCE7; color: #166534; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
-                        <?php echo $message; ?>
+                    <div style="background-color: #1B2B3D; color: var(--primary-color); border: 2px solid var(--primary-color); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; font-weight: 700;">
+                        <strong>SUCCESS:</strong> <?php echo $message; ?>
                     </div>
                 <?php endif; ?>
                 <?php if($error): ?>
-                    <div style="background-color: #FEE2E2; color: #991B1B; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
-                        <?php echo $error; ?>
+                    <div style="background-color: #2A1A1A; color: #EF4444; border: 2px solid #EF4444; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; font-weight: 700;">
+                        <strong>ERROR:</strong> <?php echo $error; ?>
                     </div>
                 <?php endif; ?>
 
@@ -111,6 +123,25 @@ $employees = mysqli_query($conn, "SELECT * FROM users WHERE role='employee' ORDE
                                 <label class="form-label">Password</label>
                                 <input type="password" name="password" class="form-control" required placeholder="******">
                             </div>
+                            <div class="form-group">
+                                <label class="form-label">Role</label>
+                                <select name="role" class="form-control">
+                                    <option value="employee">Employee</option>
+                                    <option value="admin">Admin</option>
+                                    <?php if($current_user_role == 'super_admin'): ?>
+                                        <option value="super_admin">Super Admin</option>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Specialization (Sub-Role)</label>
+                                <select name="sub_role" class="form-control">
+                                    <option value="None">None (Default)</option>
+                                    <option value="Developer">Developer</option>
+                                    <option value="Tester">Tester</option>
+                                    <option value="Full Stack">Full Stack</option>
+                                </select>
+                            </div>
                             <button type="submit" class="btn btn-primary w-full">Create Account</button>
                         </form>
                     </div>
@@ -123,8 +154,8 @@ $employees = mysqli_query($conn, "SELECT * FROM users WHERE role='employee' ORDE
                                 <thead>
                                     <tr>
                                         <th>Name</th>
+                                        <th>Role / Sub-Role</th>
                                         <th>Email</th>
-                                        <th>Joined Date</th>
                                         <th>Status</th>
                                     </tr>
                                 </thead>
@@ -132,9 +163,13 @@ $employees = mysqli_query($conn, "SELECT * FROM users WHERE role='employee' ORDE
                                     <?php if(mysqli_num_rows($employees) > 0): ?>
                                         <?php while($user = mysqli_fetch_assoc($employees)): ?>
                                             <tr>
+                                            <tr>
                                                 <td><strong><?php echo htmlspecialchars($user['full_name']); ?></strong></td>
+                                                <td>
+                                                    <span class="text-sm font-semibold"><?php echo ucfirst($user['role']); ?></span><br>
+                                                    <span class="text-xs text-muted"><?php echo $user['sub_role']; ?></span>
+                                                </td>
                                                 <td><?php echo htmlspecialchars($user['email']); ?></td>
-                                                <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
                                                 <td>
                                                     <?php if($user['is_active']): ?>
                                                         <span class="badge badge-success">Active</span>
@@ -142,6 +177,7 @@ $employees = mysqli_query($conn, "SELECT * FROM users WHERE role='employee' ORDE
                                                         <span class="badge badge-danger">Inactive</span>
                                                     <?php endif; ?>
                                                 </td>
+                                            </tr>
                                             </tr>
                                         <?php endwhile; ?>
                                     <?php else: ?>

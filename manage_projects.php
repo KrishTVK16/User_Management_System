@@ -4,22 +4,41 @@ session_start();
 require('includes/db_connect.php');
 require('includes/auth_session.php');
 
+require('includes/project_functions.php');
+
 check_login();
 check_admin();
+
+$user_id_session = $_SESSION['user_id'];
+$user_role_session = $_SESSION['role'];
 
 // Handle Form Submissions
 $message = "";
 $error = "";
 
-// 1. Add Project
+// 1. Add/Assign Project
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'add_project') {
     $name = mysqli_real_escape_string($conn, $_POST['name']);
+    $client_name = mysqli_real_escape_string($conn, $_POST['client_name']);
+    $project_link = mysqli_real_escape_string($conn, $_POST['project_link']);
     $description = mysqli_real_escape_string($conn, $_POST['description']);
-    $status = $_POST['status'];
+    $developer_id = $_POST['developer_id'];
+    $tester_id = $_POST['tester_id'];
+    $status = 'Assigned';
+    $now = date('Y-m-d H:i:s');
 
-    $sql = "INSERT INTO projects (name, description, status) VALUES ('$name', '$description', '$status')";
+    $sql = "INSERT INTO projects (name, client_name, project_link, description, developer_id, tester_id, status, assigned_at) 
+            VALUES ('$name', '$client_name', '$project_link', '$description', '$developer_id', '$tester_id', '$status', '$now')";
+    
     if (mysqli_query($conn, $sql)) {
-        $message = "Project created successfully!";
+        $project_id = mysqli_insert_id($conn);
+        log_project_history($conn, $project_id, $user_id_session, "Assigned project", "", "Assigned");
+        
+        // Notifications
+        create_notification($conn, $developer_id, "New project assigned: $name", 'info');
+        create_notification($conn, $tester_id, "New project assigned for testing: $name", 'info');
+        
+        $message = "Project created and assigned successfully!";
     } else {
         $error = "Error: " . mysqli_error($conn);
     }
@@ -45,13 +64,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 }
 
 // Fetch Data
-$projects = mysqli_query($conn, "SELECT * FROM projects ORDER BY created_at DESC");
-$users = mysqli_query($conn, "SELECT id, full_name FROM users WHERE role='employee' AND is_active=1");
-$assignments = mysqli_query($conn, "SELECT pa.id, u.full_name, p.name as project_name, pa.assigned_at 
-                                    FROM project_assignments pa 
-                                    JOIN users u ON pa.user_id = u.id 
-                                    JOIN projects p ON pa.project_id = p.id 
-                                    ORDER BY pa.assigned_at DESC");
+$projects = mysqli_query($conn, "SELECT p.*, d.full_name as dev_name, t.full_name as tester_name 
+                                FROM projects p 
+                                LEFT JOIN users d ON p.developer_id = d.id 
+                                LEFT JOIN users t ON p.tester_id = t.id 
+                                ORDER BY p.created_at DESC");
+
+$developers = mysqli_query($conn, "SELECT id, full_name FROM users WHERE (sub_role='Developer' OR sub_role='Full Stack' OR sub_role='None') AND is_active=1");
+$testers = mysqli_query($conn, "SELECT id, full_name FROM users WHERE (sub_role='Tester' OR sub_role='Full Stack' OR sub_role='None') AND is_active=1");
 
 ?>
 <!DOCTYPE html>
@@ -83,8 +103,8 @@ $assignments = mysqli_query($conn, "SELECT pa.id, u.full_name, p.name as project
                 <a href="manage_leaves.php" class="nav-item">Leaves & Permissions</a>
                 <a href="monthly_evaluation.php" class="nav-item">Evaluations</a>
             </nav>
-            <div class="sidebar-header" style="border-top: 1px solid #334155;">
-                <a href="logout.php" class="nav-item" style="color: #EF4444;">Logout</a>
+            <div class="sidebar-header" style="border-top: 2px solid var(--border-color);">
+                <a href="logout.php" class="nav-item" style="color: #EF4444; font-weight: 700;">Logout</a>
             </div>
         </aside>
 
@@ -103,105 +123,107 @@ $assignments = mysqli_query($conn, "SELECT pa.id, u.full_name, p.name as project
 
                 <?php if ($message): ?>
                     <div
-                        style="background-color: #DCFCE7; color: #166534; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
-                        <?php echo $message; ?>
+                        style="background-color: #1B2B3D; color: var(--primary-color); border: 2px solid var(--primary-color); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; font-weight: 700;">
+                        <strong>SUCCESS:</strong> <?php echo $message; ?>
                     </div>
                 <?php endif; ?>
                 <?php if ($error): ?>
                     <div
-                        style="background-color: #FEE2E2; color: #991B1B; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
-                        <?php echo $error; ?>
+                        style="background-color: #2A1A1A; color: #EF4444; border: 2px solid #EF4444; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; font-weight: 700;">
+                        <strong>ERROR:</strong> <?php echo $error; ?>
                     </div>
                 <?php endif; ?>
 
-                <div class="grid-3" style="grid-template-columns: 1fr 1fr;">
+                <div class="grid-1">
 
-                    <!-- Create Project -->
+                    <!-- Create & Assign Project -->
                     <div class="card">
-                        <h4 class="mb-4">Create New Project</h4>
-                        <form method="post">
+                        <h4 class="mb-4">Create & Assign New Project</h4>
+                        <form method="post" class="grid-2">
                             <input type="hidden" name="action" value="add_project">
                             <div class="form-group">
                                 <label class="form-label">Project Name</label>
                                 <input type="text" name="name" class="form-control" required>
                             </div>
                             <div class="form-group">
+                                <label class="form-label">Client Name</label>
+                                <input type="text" name="client_name" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Project Link (if any)</label>
+                                <input type="url" name="project_link" class="form-control" placeholder="https://...">
+                            </div>
+                            <div class="form-group">
                                 <label class="form-label">Description</label>
-                                <textarea name="description" class="form-control" rows="2"></textarea>
+                                <textarea name="description" class="form-control" rows="1"></textarea>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Status</label>
-                                <select name="status" class="form-control">
-                                    <option>Active</option>
-                                    <option>On Hold</option>
-                                    <option>Completed</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Create Project</button>
-                        </form>
-                    </div>
-
-                    <!-- Assign Employee -->
-                    <div class="card">
-                        <h4 class="mb-4">Assign Employee to Project</h4>
-                        <form method="post">
-                            <input type="hidden" name="action" value="assign_user">
-                            <div class="form-group">
-                                <label class="form-label">Select Project</label>
-                                <select name="project_id" class="form-control" required>
-                                    <?php
-                                    mysqli_data_seek($projects, 0);
-                                    while ($p = mysqli_fetch_assoc($projects)): ?>
-                                        <option value="<?php echo $p['id']; ?>">
-                                            <?php echo htmlspecialchars($p['name']); ?>
-                                        </option>
+                                <label class="form-label">Assign Developer</label>
+                                <select name="developer_id" class="form-control" required>
+                                    <option value="">Select Developer</option>
+                                    <?php while ($d = mysqli_fetch_assoc($developers)): ?>
+                                        <option value="<?php echo $d['id']; ?>"><?php echo htmlspecialchars($d['full_name']); ?></option>
                                     <?php endwhile; ?>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Select Employee</label>
-                                <select name="user_id" class="form-control" required>
-                                    <?php while ($u = mysqli_fetch_assoc($users)): ?>
-                                        <option value="<?php echo $u['id']; ?>">
-                                            <?php echo htmlspecialchars($u['full_name']); ?>
-                                        </option>
+                                <label class="form-label">Assign Tester</label>
+                                <select name="tester_id" class="form-control" required>
+                                    <option value="">Select Tester</option>
+                                    <?php while ($t = mysqli_fetch_assoc($testers)): ?>
+                                        <option value="<?php echo $t['id']; ?>"><?php echo htmlspecialchars($t['full_name']); ?></option>
                                     <?php endwhile; ?>
                                 </select>
                             </div>
-                            <button type="submit" class="btn btn-outline">Assign User</button>
+                            <div style="grid-column: span 2;">
+                                <button type="submit" class="btn btn-primary">Create & Assign Project</button>
+                            </div>
                         </form>
                     </div>
 
                 </div>
 
                 <div class="card mt-4">
-                    <h4 class="mb-4">Project Overview</h4>
+                    <h4 class="mb-4">Project Lifecycle Overview</h4>
                     <div class="table-container">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Project Name</th>
-                                    <th>Status</th>
-                                    <th>Description</th>
-                                    <th>Created At</th>
+                                    <th>Project / Client</th>
+                                    <th>Developer</th>
+                                    <th>Tester</th>
+                                    <th>Current Status</th>
+                                    <th>Timeline</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php
                                 mysqli_data_seek($projects, 0);
-                                while ($row = mysqli_fetch_assoc($projects)): ?>
+                                while ($row = mysqli_fetch_assoc($projects)): 
+                                    $status_color = "#E2E8F0";
+                                    if ($row['status'] == 'Delayed') $status_color = "#FEE2E2";
+                                    if ($row['status'] == 'Finalized') $status_color = "#DCFCE7";
+                                ?>
                                     <tr>
-                                        <td><strong>
-                                                <?php echo htmlspecialchars($row['name']); ?>
-                                            </strong></td>
-                                        <td><span class="badge" style="background:#E2E8F0;">
-                                                <?php echo $row['status']; ?>
-                                            </span></td>
                                         <td>
-                                            <?php echo htmlspecialchars($row['description']); ?>
+                                            <strong><?php echo htmlspecialchars($row['name']); ?></strong><br>
+                                            <span class="text-xs text-muted"><?php echo htmlspecialchars($row['client_name']); ?></span>
+                                        </td>
+                                        <td><?php echo htmlspecialchars($row['dev_name']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['tester_name']); ?></td>
+                                        <td>
+                                            <span class="badge" style="background:<?php echo $status_color; ?>;">
+                                                <?php echo $row['status']; ?>
+                                                <?php if($row['is_delayed']): ?>
+                                                    <span style="color:red;">(Delayed)</span>
+                                                <?php endif; ?>
+                                            </span>
                                         </td>
                                         <td>
-                                            <?php echo date('Y-m-d', strtotime($row['created_at'])); ?>
+                                            <span class="text-xs">Assigned: <?php echo date('M d', strtotime($row['assigned_at'])); ?></span><br>
+                                            <?php if($row['started_at']): ?>
+                                                <span class="text-xs">Started: <?php echo date('M d', strtotime($row['started_at'])); ?></span>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endwhile; ?>

@@ -6,8 +6,12 @@ require('includes/auth_session.php');
 
 check_login();
 
+require('includes/project_functions.php');
+
 $user_id = $_SESSION['user_id'];
 $full_name = $_SESSION['full_name'];
+$user_role = $_SESSION['role'];
+$sub_role = $_SESSION['sub_role'] ?? 'None';
 $date = date('Y-m-d');
 
 // 1. Get Attendance Status
@@ -34,15 +38,17 @@ if ($is_clocked_in) {
     }
 }
 
-// 2. Get Assigned Projects
-$projects_query = "SELECT p.id, p.name FROM projects p 
-                   JOIN project_assignments pa ON p.id = pa.project_id 
-                   WHERE pa.user_id = '$user_id' AND p.status = 'Active'";
-// For demo purposes, if no assignments, show all active projects so the user sees something
-if (mysqli_num_rows(mysqli_query($conn, $projects_query)) == 0) {
-    $projects_query = "SELECT id, name FROM projects WHERE status = 'Active'";
+// 2. Get My Projects (Based on Role)
+if ($sub_role == 'Tester') {
+    $projects_query = "SELECT * FROM projects WHERE tester_id = '$user_id' AND status IN ('Testing', 'Corrected') ORDER BY created_at DESC";
+} else {
+    $projects_query = "SELECT * FROM projects WHERE developer_id = '$user_id' AND status IN ('Assigned', 'Development Initialized', 'Correction Required') ORDER BY created_at DESC";
 }
 $projects_result = mysqli_query($conn, $projects_query);
+
+// 3. Get Notifications
+$notifications_query = "SELECT * FROM notifications WHERE user_id = '$user_id' AND is_read = 0 ORDER BY created_at DESC LIMIT 10";
+$notifications_result = mysqli_query($conn, $notifications_query);
 
 // 3. Get Today's Logs
 $logs_query = "SELECT l.*, p.name as project_name FROM daily_work_logs l 
@@ -94,8 +100,8 @@ $todays_logs_result = mysqli_query($conn, $todays_logs_query);
                 <a href="my_history.php" class="nav-item">History</a>
                 <a href="profile.php" class="nav-item">Profile</a>
             </nav>
-            <div class="sidebar-header" style="border-top: 1px solid #334155;">
-                <a href="logout.php" class="nav-item" style="color: #EF4444;">Logout</a>
+            <div class="sidebar-header" style="border-top: 2px solid var(--border-color);">
+                <a href="logout.php" class="nav-item" style="color: #EF4444; font-weight: 700;">Logout</a>
             </div>
         </aside>
 
@@ -111,7 +117,7 @@ $todays_logs_result = mysqli_query($conn, $todays_logs_query);
                     </span>
                     <div class="flex items-center gap-2">
                         <div
-                            style="width: 32px; height: 32px; background: #E2E8F0; border-radius: 50%; display:flex; align-items:center; justify-content:center; color:#64748B;">
+                            style="width: 32px; height: 32px; background: var(--primary-color); border-radius: var(--radius-sm); display:flex; align-items:center; justify-content:center; color:#14202E; font-weight: 800;">
                             <?php echo substr($full_name, 0, 1); ?>
                         </div>
                         <span class="text-sm font-semibold">
@@ -134,9 +140,24 @@ $todays_logs_result = mysqli_query($conn, $todays_logs_query);
                 <?php endif; ?>
                 <?php if (isset($_SESSION['error'])): ?>
                     <div
-                        style="background-color: #FEE2E2; color: #991B1B; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
-                        <?php echo $_SESSION['error'];
+                        style="background-color: #2A1A1A; color: #EF4444; border: 2px solid #EF4444; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem;">
+                        <strong>ERROR:</strong> <?php echo $_SESSION['error'];
                         unset($_SESSION['error']); ?>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Notifications -->
+                <?php if (mysqli_num_rows($notifications_result) > 0): ?>
+                    <div class="mb-8">
+                        <h4 class="mb-2">Alerts & Notifications</h4>
+                        <?php while($note = mysqli_fetch_assoc($notifications_result)): ?>
+                            <div class="card mb-2" style="padding: 0.75rem 1rem; border-left: 4px solid <?php echo $note['type'] == 'alert' ? '#EF4444' : 'var(--primary-color)'; ?>;">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm"><?php echo htmlspecialchars($note['message']); ?></span>
+                                    <span class="text-xs text-sub"><?php echo date('h:i A', strtotime($note['created_at'])); ?></span>
+                                </div>
+                            </div>
+                        <?php endwhile; ?>
                     </div>
                 <?php endif; ?>
 
@@ -191,14 +212,113 @@ $todays_logs_result = mysqli_query($conn, $todays_logs_query);
                         <?php endif; ?>
                     </div>
 
-                    <!-- Projects Widget -->
-                    <div class="card stat-card">
-                        <h4>Active Projects</h4>
-                        <div class="stat-value">
-                            <?php echo mysqli_num_rows($projects_result); ?>
+                    <!-- Role Info Widget -->
+                    <div class="card stat-card" style="border-top: 4px solid var(--primary-color);">
+                        <h4 class="text-sub">Role & Specialization</h4>
+                        <div class="stat-value" style="font-size: 1.5rem; margin: 0.5rem 0;">
+                            <?php echo $sub_role; ?>
                         </div>
-                        <p class="stat-label">Available to work on</p>
+                        <p class="text-muted text-sm">Assigned as <?php echo $sub_role == 'Tester' ? 'QA/Tester' : 'Project Developer'; ?></p>
                     </div>
+                </div>
+
+                <!-- PROJECT WORKFLOW SECTION -->
+                <h3 class="mb-4">My Active Project Workflow</h3>
+                <div class="grid-1 mb-8">
+                    <?php if (mysqli_num_rows($projects_result) > 0): ?>
+                        <?php while($p = mysqli_fetch_assoc($projects_result)): ?>
+                            <div class="card mb-4">
+                                <div class="flex justify-between items-center mb-4">
+                                    <div>
+                                        <h4 class="mb-1"><?php echo htmlspecialchars($p['name']); ?></h4>
+                                        <div class="flex gap-4">
+                                            <span class="text-sm text-muted">Client: <strong><?php echo htmlspecialchars($p['client_name']); ?></strong></span>
+                                            <?php if($p['project_link']): ?>
+                                                <a href="<?php echo htmlspecialchars($p['project_link']); ?>" target="_blank" class="text-sm text-primary">View Project Link</a>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="badge" style="background: var(--bg-body); border: 1px solid var(--border-color);"><?php echo $p['status']; ?></span>
+                                        <?php if($p['is_delayed']): ?><br><span class="text-xs text-danger font-bold">DELAYED</span><?php endif; ?>
+                                    </div>
+                                </div>
+
+                                <div class="p-4 bg-gray-50 border rounded-lg mb-4" style="background: #1B2B3D; padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                                    
+                                    <!-- Developer Actions -->
+                                    <?php if ($sub_role != 'Tester'): ?>
+                                        
+                                        <?php if ($p['status'] == 'Assigned'): ?>
+                                            <form action="actions/project_action.php" method="post">
+                                                <input type="hidden" name="action" value="start_development">
+                                                <input type="hidden" name="project_id" value="<?php echo $p['id']; ?>">
+                                                <label class="form-label">Initial Notes / Requirements Understanding</label>
+                                                <textarea name="notes" class="form-control mb-4" required placeholder="What is required for this project?"></textarea>
+                                                <button type="submit" class="btn btn-primary">Initialize Development</button>
+                                            </form>
+                                        <?php elseif ($p['status'] == 'Development Initialized' || $p['status'] == 'Correction Required'): ?>
+                                            
+                                            <?php if($p['status'] == 'Correction Required'): ?>
+                                                <div style="background:#2A1A1A; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; border: 1px solid #EF4444;">
+                                                    <strong class="text-danger">Correction Needed:</strong><br>
+                                                    <p class="text-sm"><?php echo htmlspecialchars($p['fix_notes']); ?></p>
+                                                </div>
+                                            <?php endif; ?>
+
+                                            <form action="actions/project_action.php" method="post">
+                                                <input type="hidden" name="action" value="complete_development">
+                                                <input type="hidden" name="project_id" value="<?php echo $p['id']; ?>">
+                                                <div class="grid-2">
+                                                    <div class="form-group">
+                                                        <label class="form-label">Staging/Internal URL</label>
+                                                        <input type="url" name="completion_link" class="form-control" required placeholder="https://staging.site.com">
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label class="form-label">Completion Notes</label>
+                                                        <textarea name="notes" class="form-control" rows="1" required placeholder="What was done?"></textarea>
+                                                    </div>
+                                                </div>
+                                                <button type="submit" class="btn btn-success">Submit for Testing</button>
+                                            </form>
+                                        <?php endif; ?>
+
+                                    <!-- Tester Actions -->
+                                    <?php else: ?>
+                                        
+                                        <div class="mb-4">
+                                            <strong>Developer:</strong> <?php echo htmlspecialchars($p['completion_notes']); ?><br>
+                                            <strong>Link:</strong> <a href="<?php echo htmlspecialchars($p['completion_link']); ?>" target="_blank"><?php echo htmlspecialchars($p['completion_link']); ?></a>
+                                        </div>
+
+                                        <div class="flex gap-4">
+                                            <button class="btn btn-danger" onclick="document.getElementById('correction-form-<?php echo $p['id']; ?>').style.display='block'">Request Correction</button>
+                                            <form action="actions/project_action.php" method="post" style="display:inline;">
+                                                <input type="hidden" name="action" value="finalize_project">
+                                                <input type="hidden" name="project_id" value="<?php echo $p['id']; ?>">
+                                                <button type="submit" class="btn btn-success">Mark as Finalized</button>
+                                            </form>
+                                        </div>
+
+                                        <div id="correction-form-<?php echo $p['id']; ?>" style="display:none;" class="mt-4 pt-4 border-t">
+                                            <form action="actions/project_action.php" method="post">
+                                                <input type="hidden" name="action" value="request_correction">
+                                                <input type="hidden" name="project_id" value="<?php echo $p['id']; ?>">
+                                                <label class="form-label text-danger">Correction Notes</label>
+                                                <textarea name="notes" class="form-control" rows="3" required placeholder="Specify what needs to be fixed..."></textarea>
+                                                <button type="submit" class="btn btn-danger mt-2">Send Back to Developer</button>
+                                            </form>
+                                        </div>
+
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endwhile; ?>
+                    <?php else: ?>
+                        <div class="card text-center py-8">
+                            <p class="text-muted">No projects currently awaiting your action.</p>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <h3 class="mb-4">Submit Daily Work Log</h3>

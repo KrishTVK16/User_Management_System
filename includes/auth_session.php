@@ -14,10 +14,10 @@ function check_login()
     }
 }
 
-// Function to check if user is admin
+// Function to check if user is admin or super_admin
 function check_admin()
 {
-    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'admin' && $_SESSION['role'] !== 'super_admin')) {
         // Redirect non-admins to their dashboard or show error
         header("Location: employee_dashboard.php");
         exit();

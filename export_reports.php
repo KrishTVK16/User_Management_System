@@ -31,9 +31,55 @@ if ($type == 'attendance') {
     while ($row = mysqli_fetch_assoc($result)) {
         fputcsv($output, $row);
     }
-} elseif ($type == 'logs') {
+    while ($row = mysqli_fetch_assoc($result)) {
+        fputcsv($output, $row);
+    }
+} elseif ($type == 'projects_status') {
     // Column Headers
-    fputcsv($output, array('Log ID', 'Employee', 'Project', 'Date', 'Description', 'Status', 'Minutes Spent'));
+    fputcsv($output, array('Project Name', 'Client', 'Developer', 'Tester', 'Status', 'Assigned At', 'Started At', 'Completed At', 'Is Delayed'));
+
+    // Fetch Data
+    $sql = "SELECT p.name, p.client_name, d.full_name as dev_name, t.full_name as tester_name, p.status, p.assigned_at, p.started_at, p.completed_at, p.is_delayed 
+            FROM projects p 
+            LEFT JOIN users d ON p.developer_id = d.id 
+            LEFT JOIN users t ON p.tester_id = t.id 
+            ORDER BY p.status ASC";
+    $result = mysqli_query($conn, $sql);
+
+    while ($row = mysqli_fetch_assoc($result)) {
+        fputcsv($output, $row);
+    }
+} elseif ($type == 'productivity') {
+    // Column Headers
+    fputcsv($output, array('Developer', 'Date', 'Projects Completed Today', 'Projects Currently Initialized'));
+
+    // Fetch Data
+    $sql = "SELECT u.full_name, '$date' as date,
+            (SELECT COUNT(*) FROM projects WHERE developer_id = u.id AND DATE(completed_at) = '$date') as completions,
+            (SELECT COUNT(*) FROM projects WHERE developer_id = u.id AND status = 'Development Initialized') as active_count
+            FROM users u WHERE u.sub_role IN ('Developer', 'Full Stack') AND u.is_active = 1";
+    $result = mysqli_query($conn, $sql);
+
+    while ($row = mysqli_fetch_assoc($result)) {
+        fputcsv($output, $row);
+    }
+} elseif ($type == 'delays') {
+    // Column Headers
+    fputcsv($output, array('Project ID', 'Name', 'Client', 'Developer', 'Status', 'Assigned At', 'Delay Reason (Limit > 2 Days)'));
+
+    // Fetch Data
+    $sql = "SELECT p.id, p.name, p.client_name, u.full_name as dev_name, p.status, p.assigned_at, 'Time limit exceeded' as reason 
+            FROM projects p 
+            JOIN users u ON p.developer_id = u.id 
+            WHERE p.is_delayed = 1";
+    $result = mysqli_query($conn, $sql);
+
+    while ($row = mysqli_fetch_assoc($result)) {
+        fputcsv($output, $row);
+    }
+} elseif ($type == 'daily_logs') {
+    // Column Headers
+    fputcsv($output, array('Log ID', 'Employee', 'Project', 'Date', 'Work Description', 'Status', 'Minutes Spent'));
 
     // Fetch Data
     $sql = "SELECT l.id, u.full_name, p.name as project_name, l.date, l.description, l.status, l.time_spent_minutes 

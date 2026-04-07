@@ -67,7 +67,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             <?php if ($error_msg): ?>
                 <div
-                    style="background-color: #FEE2E2; color: #991B1B; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                    style="background-color: #2A1A1A; color: #EF4444; border: 2px solid #EF4444; padding: 0.75rem; border-radius: var(--radius-md); margin-bottom: 1rem; text-align: center; font-size: 0.9rem; font-weight: 700;">
                     <?php echo $error_msg; ?>
                 </div>
             <?php endif; ?>
@@ -89,10 +89,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <!-- Credentials removed as requested -->
 
                 <div class="form-group flex justify-between">
-                    <label class="flex items-center gap-2 text-sm text-muted">
+                    <label class="flex items-center gap-2 text-sm text-sub">
                         <input type="checkbox"> Remember me
                     </label>
-                    <a href="#" class="text-sm text-primary hover:underline">Forgot password?</a>
+                    <a href="#" class="text-sm text-gold hover:underline" style="color: var(--primary-color);">Forgot password?</a>
                 </div>
 
                 <button type="submit" class="btn btn-primary w-full">Sign In</button>
