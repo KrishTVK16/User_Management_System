@@ -128,7 +128,8 @@ function check_productivity_rule($conn, $developer_id) {
  */
 function get_user_visibility_clause($session_role) {
     if ($session_role == 'super_admin') return "";
-    return " AND role != 'super_admin'";
+    if ($session_role == 'admin') return " AND role = 'employee'";
+    return " AND 1=0"; // Default: see nothing if not admin or above
 }
 
 /**

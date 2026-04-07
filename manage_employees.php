@@ -28,9 +28,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
         $role = mysqli_real_escape_string($conn, $_POST['role'] ?? 'employee');
         $sub_role = mysqli_real_escape_string($conn, $_POST['sub_role'] ?? 'None');
 
-        // Security check: only super_admin can create another super_admin
-        if ($role === 'super_admin' && $current_user_role !== 'super_admin') {
-            $role = 'admin'; // Downgrade if not authorized
+        // Security check: Only super_admins can create Administrators or Super Admins
+        if ($current_user_role !== 'super_admin') {
+            $role = 'employee'; // Force downgrade for regular admins
         }
 
         // We use email as the username for simplicity based on recent login changes
@@ -67,7 +67,6 @@ $employees = mysqli_query($conn, "SELECT * FROM users WHERE 1=1 $visibility_clau
             <div class="sidebar-header">
                 <img src="assets/logo.png" alt="SmartFusion" class="logo-img">
                 <span class="logo-text">SmartFusion</span>
-                <div class="text-sm text-muted" style="margin-left: auto;"><?php echo get_role_label($_SESSION['role']); ?></div>
             </div>
 
             <nav class="sidebar-nav">
@@ -127,8 +126,8 @@ $employees = mysqli_query($conn, "SELECT * FROM users WHERE 1=1 $visibility_clau
                                 <label class="form-label">Role</label>
                                 <select name="role" class="form-control">
                                     <option value="employee">Employee</option>
-                                    <option value="admin">Administrator</option>
                                     <?php if($current_user_role == 'super_admin'): ?>
+                                        <option value="admin">Administrator</option>
                                         <option value="super_admin">Administrator_</option>
                                     <?php endif; ?>
                                 </select>

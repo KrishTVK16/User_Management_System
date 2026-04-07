@@ -102,7 +102,6 @@ if ($user_role_session == 'super_admin') {
             <div class="sidebar-header">
                 <img src="assets/logo.png" alt="SmartFusion" class="logo-img">
                 <span class="logo-text">SmartFusion</span>
-                <div class="text-sm text-muted" style="margin-left: auto;"><?php echo get_role_label($_SESSION['role']); ?></div>
             </div>
 
             <nav class="sidebar-nav">
