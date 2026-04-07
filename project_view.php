@@ -49,6 +49,9 @@ $logs_sql = "SELECT l.*, u.full_name
              ORDER BY l.created_at DESC";
 $logs_result = mysqli_query($conn, $logs_sql);
 
+$is_developer = ($user_id == $project['developer_id']);
+$is_tester = ($user_id == $project['tester_id']);
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -152,142 +155,254 @@ $logs_result = mysqli_query($conn, $logs_sql);
             </header>
 
             <div class="page-content">
-                <div class="grid-3 mb-8">
-                    <div class="card col-span-2">
-                        <div class="flex justify-between items-start mb-6">
-                            <div>
-                                <span class="text-xs text-primary font-bold uppercase tracking-wider"><?php echo htmlspecialchars($project['master_name'] ?: 'Standalone Project'); ?></span>
-                                <h2 class="mt-1"><?php echo htmlspecialchars($project['name']); ?></h2>
-                                <p class="text-muted mt-2"><?php echo nl2br(htmlspecialchars($project['description'])); ?></p>
-                            </div>
-                            <span class="badge" style="background: var(--bg-body); border: 2px solid var(--primary-color); color: var(--primary-color); padding: 0.5rem 1rem;">
-                                <?php echo $project['status']; ?>
-                            </span>
-                        </div>
-
-                        <div class="grid-2 gap-6">
-                            <div class="info-group">
-                                <label class="text-xs text-muted font-bold uppercase">Client Name</label>
-                                <p class="font-medium"><?php echo htmlspecialchars($project['client_name'] ?: 'Internal'); ?></p>
-                            </div>
-                            <div class="info-group">
-                                <label class="text-xs text-muted font-bold uppercase">Project Type</label>
-                                <p class="font-medium"><?php echo htmlspecialchars($project['project_type'] ?: 'Static HTML'); ?></p>
-                            </div>
-                            <div class="info-group">
-                                <label class="text-xs text-muted font-bold uppercase">Developer</label>
-                                <p class="font-medium"><?php echo htmlspecialchars($project['developer_name'] ?: 'Not Assigned'); ?></p>
-                            </div>
-                            <div class="info-group">
-                                <label class="text-xs text-muted font-bold uppercase">Tester</label>
-                                <p class="font-medium"><?php echo htmlspecialchars($project['tester_name'] ?: 'Not Assigned'); ?></p>
-                            </div>
-                        </div>
-
-                        <?php if($project['project_link']): ?>
-                            <div class="mt-8 pt-6 border-t">
-                                <a href="<?php echo htmlspecialchars($project['project_link']); ?>" target="_blank" class="btn btn-primary">Open Live Preview</a>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-
-                    <div class="card">
-                        <h4 class="mb-4">Project Statistics</h4>
-                        <div class="flex flex-col gap-4">
-                            <div class="stat-item flex justify-between">
-                                <span class="text-muted">Assigned Date</span>
-                                <span class="font-semibold"><?php echo $project['assigned_at'] ? date('M d, Y', strtotime($project['assigned_at'])) : '---'; ?></span>
-                            </div>
-                            <div class="stat-item flex justify-between">
-                                <span class="text-muted">Started Date</span>
-                                <span class="font-semibold"><?php echo $project['started_at'] ? date('M d, Y', strtotime($project['started_at'])) : '---'; ?></span>
-                            </div>
-                            <div class="stat-item flex justify-between">
-                                <span class="text-muted">Completed Date</span>
-                                <span class="font-semibold"><?php echo $project['completed_at'] ? date('M d, Y', strtotime($project['completed_at'])) : '---'; ?></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid-2 gap-8">
-                    <!-- History Timeline -->
-                    <div>
-                        <h3 class="mb-4">Project History (Workflow)</h3>
-                        <div class="card">
-                            <?php if(mysqli_num_rows($history_result) > 0): ?>
-                                <div class="timeline">
-                                    <?php while($h = mysqli_fetch_assoc($history_result)): ?>
-                                        <div class="timeline-item">
-                                            <div class="timeline-dot"></div>
-                                            <div class="timeline-content">
-                                                <div class="flex justify-between items-start">
-                                                    <div>
-                                                        <div class="timeline-date"><?php echo date('M d, Y | h:i A', strtotime($h['created_at'])); ?></div>
-                                                        <div class="timeline-user"><?php echo htmlspecialchars($h['full_name']); ?></div>
-                                                    </div>
-                                                    <span class="timeline-status"><?php echo $h['to_status']; ?></span>
-                                                </div>
-                                                <div class="timeline-action uppercase tracking-tighter text-xs"><?php echo htmlspecialchars($h['action']); ?></div>
-                                                <?php if($h['notes']): ?>
-                                                    <p class="text-xs text-muted italic mt-2 border-l-2 border-primary pl-2"><?php echo htmlspecialchars($h['notes']); ?></p>
-                                                <?php endif; ?>
-                                            </div>
-                                        </div>
-                                    <?php endwhile; ?>
+                <div class="v-stack">
+                    <!-- Unified Hero & Stats Section -->
+                    <div class="premium-card">
+                        <div class="project-hero-content">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <span class="hero-label"><?php echo htmlspecialchars($project['master_name'] ?: 'Standalone Project'); ?></span>
+                                    <h1 class="hero-title mt-2"><?php echo htmlspecialchars($project['name']); ?></h1>
                                 </div>
-                            <?php else: ?>
-                                <p class="text-muted text-center py-8">No history recorded for this project yet.</p>
+                                <div class="status-ring">
+                                    <?php echo $project['status']; ?>
+                                </div>
+                            </div>
+
+                            <p class="text-muted mt-4" style="font-size: 1.1rem; max-width: 800px;">
+                                <?php echo nl2br(htmlspecialchars($project['description'])); ?>
+                            </p>
+
+                            <div class="hero-meta">
+                                <div class="meta-item">
+                                    <span class="hero-label" style="font-size: 0.65rem; opacity: 0.7;">Client Detail</span>
+                                    <span class="font-bold"><?php echo htmlspecialchars($project['client_name'] ?: 'Internal'); ?></span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="hero-label" style="font-size: 0.65rem; opacity: 0.7;">Project Type</span>
+                                    <span class="font-bold"><?php echo htmlspecialchars($project['project_type'] ?: 'Static HTML'); ?></span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="hero-label" style="font-size: 0.65rem; opacity: 0.7;">Developer</span>
+                                    <span class="font-bold text-gold"><?php echo htmlspecialchars($project['developer_name'] ?: 'Unassigned'); ?></span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="hero-label" style="font-size: 0.65rem; opacity: 0.7;">Tester</span>
+                                    <span class="font-bold text-gold"><?php echo htmlspecialchars($project['tester_name'] ?: 'Unassigned'); ?></span>
+                                </div>
+                            </div>
+
+                            <!-- Integration Stats directly in Hero -->
+                            <div class="hero-meta" style="border-top-style: dashed; padding-top: 1rem;">
+                                <div class="meta-item">
+                                    <span class="hero-label" style="font-size: 0.6rem;">Assigned</span>
+                                    <span class="text-sm"><?php echo $project['assigned_at'] ? date('M d, Y', strtotime($project['assigned_at'])) : '---'; ?></span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="hero-label" style="font-size: 0.6rem;">Started</span>
+                                    <span class="text-sm"><?php echo $project['started_at'] ? date('M d, Y', strtotime($project['started_at'])) : '---'; ?></span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="hero-label" style="font-size: 0.6rem;">Completed</span>
+                                    <span class="text-sm"><?php echo $project['completed_at'] ? date('M d, Y', strtotime($project['completed_at'])) : '---'; ?></span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="hero-label" style="font-size: 0.6rem;">Current Role</span>
+                                    <span class="badge" style="background: var(--primary-color); color: #14202E; font-size: 0.6rem;">
+                                        <?php 
+                                            if ($is_developer && $is_tester) echo "DEV & TEST";
+                                            elseif ($is_developer) echo "DEVELOPER";
+                                            elseif ($is_tester) echo "TESTER";
+                                            else echo "VIEWER";
+                                        ?>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <?php if($project['project_link']): ?>
+                                <div class="mt-6">
+                                    <a href="<?php echo htmlspecialchars($project['project_link']); ?>" target="_blank" class="btn btn-primary" style="padding: 1rem 2rem; border-radius: 2rem;">
+                                        🚀 Launch Live Preview
+                                    </a>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
 
-                    <!-- Project Submissions -->
-                    <div>
-                        <h3 class="mb-4">Internal Submissions (Logs)</h3>
-                        <div class="card" style="padding:0;">
-                            <table class="table" style="width:100%">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>User</th>
-                                        <th>Status</th>
-                                        <th>Time</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if(mysqli_num_rows($logs_result) > 0): ?>
-                                        <?php while($l = mysqli_fetch_assoc($logs_result)): ?>
-                                            <tr>
-                                                <td class="text-xs">
-                                                    <?php echo date('M d', strtotime($l['date'])); ?>
-                                                </td>
-                                                <td>
-                                                    <div class="text-xs font-bold"><?php echo htmlspecialchars($l['full_name']); ?></div>
-                                                </td>
-                                                <td>
-                                                    <span class="badge" style="font-size: 0.6rem;"><?php echo $l['status']; ?></span>
-                                                </td>
-                                                <td class="text-xs">
-                                                    <?php echo floor($l['time_spent_minutes'] / 60) . 'h ' . ($l['time_spent_minutes'] % 60) . 'm'; ?>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td colspan="4" class="text-xs text-muted" style="border-top:none; padding-top:0;">
-                                                    <?php echo htmlspecialchars($l['description']); ?>
-                                                </td>
-                                            </tr>
+                    <!-- Workflow Action Center -->
+                    <?php if ($is_developer || $is_tester): ?>
+                    <div class="v-stack">
+                        <?php if ($is_developer && (in_array($project['status'], ['Assigned', 'Development Initialized', 'Correction Required']))): ?>
+                        <div class="form-card" style="border-left: 5px solid var(--primary-color);">
+                            <div class="flex items-center gap-3 mb-6">
+                                <span style="font-size: 1.5rem;">⚡</span>
+                                <h3 class="hero-label" style="color: #fff; margin:0;">Developer Command Center</h3>
+                            </div>
+                            
+                            <?php if ($project['status'] == 'Assigned'): ?>
+                                <form action="actions/project_action.php" method="POST" class="v-stack">
+                                    <input type="hidden" name="project_id" value="<?php echo $project_id; ?>">
+                                    <input type="hidden" name="action" value="start_development">
+                                    <div class="form-group-v2">
+                                        <label>Initialization Notes</label>
+                                        <textarea name="notes" placeholder="Any initial thoughts before starting?" class="form-control" rows="2"></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-full">Initialize & Start development</button>
+                                </form>
+                            <?php else: ?>
+                                <form action="actions/project_action.php" method="POST" class="v-stack">
+                                    <input type="hidden" name="project_id" value="<?php echo $project_id; ?>">
+                                    <input type="hidden" name="action" value="complete_development">
+                                    <div class="grid-2 gap-6">
+                                        <div class="form-group-v2">
+                                            <label>Live Preview Link</label>
+                                            <input type="url" name="completion_link" class="form-control" required value="<?php echo htmlspecialchars($project['project_link']); ?>">
+                                        </div>
+                                        <div class="form-group-v2">
+                                            <label>Submit for Testing</label>
+                                            <button type="submit" class="btn btn-primary w-full">Finalize & Submit</button>
+                                        </div>
+                                    </div>
+                                    <div class="form-group-v2">
+                                        <label>Release Notes</label>
+                                        <textarea name="notes" placeholder="What have you implemented/fixed?" class="form-control" rows="3" required></textarea>
+                                    </div>
+                                </form>
+                            <?php endif; ?>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if ($is_tester && (in_array($project['status'], ['Testing', 'Corrected']))): ?>
+                        <div class="form-card" style="border-left: 5px solid #10B981;">
+                            <div class="flex items-center gap-3 mb-6">
+                                <span style="font-size: 1.5rem;">🔍</span>
+                                <h3 class="hero-label" style="color: #fff; margin:0;">QA Command Center</h3>
+                            </div>
+                            
+                            <div class="flex gap-4">
+                                <button onclick="document.getElementById('correction-form').classList.toggle('hidden')" class="btn btn-outline" style="flex: 1;">Request Fixes</button>
+                                <form action="actions/project_action.php" method="POST" style="flex: 2;">
+                                    <input type="hidden" name="project_id" value="<?php echo $project_id; ?>">
+                                    <input type="hidden" name="action" value="finalize_project">
+                                    <button type="submit" class="btn btn-success w-full" onsubmit="return confirm('Finalize project?');">Finalize & Mark as Go-Live</button>
+                                </form>
+                            </div>
+
+                            <form id="correction-form" action="actions/project_action.php" method="POST" class="v-stack hidden mt-6 p-6 bg-body rounded-lg border border-danger">
+                                <input type="hidden" name="project_id" value="<?php echo $project_id; ?>">
+                                <input type="hidden" name="action" value="request_correction">
+                                <div class="form-group-v2">
+                                    <label class="text-danger">Bug Report / Correction Details</label>
+                                    <textarea name="notes" placeholder="Please list all issues that need to be fixed..." class="form-control" rows="4" required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-danger">Submit Correction Request</button>
+                            </form>
+                        </div>
+                        <?php endif; ?>
+
+                        <!-- Work Log - Always Visible for Assigned Users -->
+                        <div class="form-card" style="border-left: 5px solid #3B82F6;">
+                            <div class="flex items-center gap-3 mb-6">
+                                <span style="font-size: 1.5rem;">📝</span>
+                                <h3 class="hero-label" style="color: #fff; margin:0;">Daily Productivity Log</h3>
+                            </div>
+                            <form action="actions/submit_log.php" method="POST" class="v-stack">
+                                <input type="hidden" name="project_id" value="<?php echo $project_id; ?>">
+                                <div class="grid-3 gap-6">
+                                    <div class="form-group-v2">
+                                        <label>Time Spent</label>
+                                        <input type="text" name="time_spent" placeholder="e.g. 2h 30m" class="form-control" required>
+                                    </div>
+                                    <div class="form-group-v2">
+                                        <label>Status Update</label>
+                                        <select name="status" class="form-control">
+                                            <option value="InProgress">In Progress</option>
+                                            <option value="FixingBugs">Fixing Bugs</option>
+                                            <option value="Optimizing">Optimizing</option>
+                                            <option value="Done">Completed</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group-v2">
+                                        <label>Action</label>
+                                        <button type="submit" class="btn btn-success w-full">Save Log Entry</button>
+                                    </div>
+                                </div>
+                                <div class="form-group-v2">
+                                    <label>Work Description</label>
+                                    <textarea name="description" placeholder="Briefly describe what you worked on today..." class="form-control" rows="2" required></textarea>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Journey & Submissions -->
+                    <div class="grid-2 gap-8">
+                        <div>
+                            <h3 class="hero-label mb-4">Project Journey</h3>
+                            <div class="premium-card" style="padding: 1.5rem;">
+                                <?php if(mysqli_num_rows($history_result) > 0): ?>
+                                    <div class="timeline-v3">
+                                        <?php while($h = mysqli_fetch_assoc($history_result)): ?>
+                                            <div class="timeline-v3-item">
+                                                <div class="timeline-v3-icon"></div>
+                                                <div class="timeline-v3-card">
+                                                    <div class="flex justify-between items-start mb-2">
+                                                        <div>
+                                                            <div class="text-xs text-muted mb-1"><?php echo date('M d, Y | h:i A', strtotime($h['created_at'])); ?></div>
+                                                            <div class="font-bold text-sm"><?php echo htmlspecialchars($h['full_name']); ?></div>
+                                                        </div>
+                                                        <span class="status-ring" style="font-size: 0.6rem; padding: 0.2rem 0.6rem;"><?php echo $h['to_status']; ?></span>
+                                                    </div>
+                                                    <div class="text-gold font-bold text-xs uppercase tracking-widest"><?php echo htmlspecialchars($h['action']); ?></div>
+                                                    <?php if($h['notes']): ?>
+                                                        <p class="text-xs text-muted mt-3 italic border-l-2 border-primary pl-3"><?php echo htmlspecialchars($h['notes']); ?></p>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
                                         <?php endwhile; ?>
-                                    <?php else: ?>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="text-center py-10 opacity-50">No history available</div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="hero-label mb-4">Work Submissions</h3>
+                            <div class="table-container">
+                                <table class="table">
+                                    <thead>
                                         <tr>
-                                            <td colspan="4" class="text-center text-muted py-8">No work logs submitted for this project.</td>
+                                            <th>User</th>
+                                            <th>Status</th>
+                                            <th>Time</th>
+                                            <th>Details</th>
                                         </tr>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        <?php if(mysqli_num_rows($logs_result) > 0): ?>
+                                            <?php while($l = mysqli_fetch_assoc($logs_result)): ?>
+                                                <tr>
+                                                    <td>
+                                                        <div class="text-xs font-bold"><?php echo htmlspecialchars($l['full_name']); ?></div>
+                                                        <div class="text-muted" style="font-size: 0.6rem;"><?php echo date('M d', strtotime($l['date'])); ?></div>
+                                                    </td>
+                                                    <td><span class="badge" style="font-size: 0.6rem;"><?php echo $l['status']; ?></span></td>
+                                                    <td class="text-xs font-mono"><?php echo floor($l['time_spent_minutes'] / 60) . 'h ' . ($l['time_spent_minutes'] % 60) . 'm'; ?></td>
+                                                    <td class="text-xs italic opacity-80"><?php echo htmlspecialchars($l['description']); ?></td>
+                                                </tr>
+                                            <?php endwhile; ?>
+                                        <?php else: ?>
+                                            <tr><td colspan="4" class="text-center py-10 opacity-50">No logs found</td></tr>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
             </div>
         </main>
     </div>

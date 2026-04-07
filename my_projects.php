@@ -9,26 +9,24 @@ check_login();
 $user_id = $_SESSION['user_id'];
 $full_name = $_SESSION['full_name'];
 
-// Get My Projects (Hierarchical logic from dashboard)
-$sub_role = $_SESSION['sub_role'] ?? 'None';
+// NEW Unified Query: Fetches all projects where the user has an ACTIVE role
+// We show projects in statuses relevant to either Developer or Tester
+$sql = "SELECT p.*, m.name as master_name 
+        FROM projects p 
+        LEFT JOIN projects m ON p.parent_id = m.id
+        WHERE 
+            (p.developer_id = '$user_id' AND p.status IN ('Assigned', 'Development Initialized', 'Correction Required'))
+            OR
+            (p.tester_id = '$user_id' AND p.status IN ('Testing', 'Corrected', 'Development Completed', 'Finalized'))
+        ORDER BY 
+            (CASE 
+                WHEN p.status = 'Testing' OR p.status = 'Corrected' THEN 1 
+                WHEN p.status = 'Correction Required' THEN 1 
+                ELSE 2 
+            END), 
+            p.id DESC";
 
-if ($sub_role == 'Tester') {
-    $sql = "SELECT p.*, m.name as master_name 
-            FROM projects p 
-            LEFT JOIN projects m ON p.parent_id = m.id
-            WHERE p.tester_id = '$user_id' AND p.status IN ('Testing', 'Corrected', 'Finalized', 'Client Submitted') 
-            ORDER BY m.name ASC, p.name ASC";
-} else {
-    $sql = "SELECT p.*, m.name as master_name 
-            FROM projects p 
-            LEFT JOIN projects m ON p.parent_id = m.id
-            WHERE p.developer_id = '$user_id' AND p.status IN ('Assigned', 'Development Initialized', 'Correction Required', 'Corrected', 'Development Completed') 
-            ORDER BY m.name ASC, p.name ASC";
-}
 $result = mysqli_query($conn, $sql);
-
-// Removed outdated fallback logic as we now use direct assignments in the projects table.
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -64,51 +62,82 @@ $result = mysqli_query($conn, $sql);
         <main class="main-content">
             <header class="top-bar">
                 <button class="menu-toggle">☰</button>
-                <h3>My Projects</h3>
+                <div class="flex items-center gap-2">
+                    <span class="text-muted">Assignments</span>
+                    <span class="text-muted">/</span>
+                    <span class="font-bold">Active Projects</span>
+                </div>
                 <div class="flex items-center gap-4">
-                    <span class="text-sm font-semibold">
-                        <?php echo $full_name; ?>
-                    </span>
+                    <span class="text-sm font-semibold"><?php echo $full_name; ?></span>
                 </div>
             </header>
 
             <div class="page-content">
-                <div class="grid-3" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
-                    <?php while ($row = mysqli_fetch_assoc($result)): ?>
-                            <div class="mb-4">
-                                <span class="text-xs text-primary font-bold">
-                                    <?php echo htmlspecialchars($row['master_name'] ?: 'Standalone Project'); ?>
-                                </span>
-                                <h4 class="mt-1">
-                                    <?php echo htmlspecialchars($row['name']); ?>
-                                </h4>
-                            </div>
-                            
-                            <div class="flex justify-between items-center mb-4">
-                                <span class="badge badge-success" style="background: var(--bg-body); border: 1px solid var(--border-color); color: var(--primary-color);">
-                                    <?php echo $row['status']; ?>
-                                </span>
-                                <?php if($row['is_delayed']): ?>
-                                    <span class="text-xs text-danger font-bold">DELAYED</span>
-                                <?php endif; ?>
-                            </div>
+                <div class="v-stack">
+                    <div class="flex justify-between items-end mb-2">
+                        <div>
+                            <h2 class="hero-title" style="font-size: 1.5rem;">Work Queue</h2>
+                            <p class="text-muted text-sm">Projects that require your immediate attention</p>
+                        </div>
+                    </div>
 
-                            <p class="text-muted text-sm mb-4" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                <?php echo htmlspecialchars($row['description']); ?>
-                            </p>
+                    <div class="project-list">
+                        <?php if (mysqli_num_rows($result) > 0): ?>
+                            <?php while ($row = mysqli_fetch_assoc($result)): 
+                                // Determine the user's role for this specific project
+                                $role_label = ($row['tester_id'] == $user_id) ? 'TESTER' : 'DEVELOPER';
+                                $role_color = ($row['tester_id'] == $user_id) ? '#3B82F6' : '#D4AF37';
+                            ?>
+                                <a href="project_view.php?id=<?php echo $row['id']; ?>" class="project-row-card">
+                                    <div class="flex items-center gap-6" style="flex: 1;">
+                                        <div class="status-ring" style="width: 48px; height: 48px; border-radius: 12px; font-size: 1.25rem; border-color: <?php echo $role_color; ?>33; background: <?php echo $role_color; ?>0d;">
+                                            <?php echo ($role_label == 'TESTER') ? '🔍' : '🚀'; ?>
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="hero-label" style="font-size: 0.6rem; opacity: 0.8;"><?php echo htmlspecialchars($row['master_name'] ?: 'Standalone Project'); ?></span>
+                                                <span class="badge" style="font-size: 0.5rem; background: <?php echo $role_color; ?>; color: #14202E; border: none; padding: 0.1rem 0.4rem;"><?php echo $role_label; ?></span>
+                                            </div>
+                                            <h4 class="text-white mt-1" style="font-size: 1.1rem;"><?php echo htmlspecialchars($row['name']); ?></h4>
+                                            <p class="text-muted text-xs mt-1" style="max-width: 450px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                                <?php echo htmlspecialchars($row['description']); ?>
+                                            </p>
+                                        </div>
+                                    </div>
 
-                            <div class="flex justify-between items-center pt-4 border-t border-gray-100">
-                                <div class="text-xs text-muted">
-                                    Assigned At:<br>
-                                    <span class="font-semibold"><?php echo $row['assigned_at'] ? date('M d, Y', strtotime($row['assigned_at'])) : 'Pending'; ?></span>
-                                </div>
-                                <a href="project_view.php?id=<?php echo $row['id']; ?>" class="btn btn-primary btn-sm" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">View Details</a>
+                                    <div class="flex items-center gap-8">
+                                        <div class="meta-item text-right">
+                                            <span class="hero-label" style="font-size: 0.6rem; opacity: 0.7;">Due Date</span>
+                                            <span class="text-xs font-bold"><?php echo $row['assigned_at'] ? date('M d', strtotime($row['assigned_at'])) : '---'; ?></span>
+                                        </div>
+                                        
+                                        <div class="meta-item text-center" style="min-width: 130px;">
+                                            <span class="hero-label" style="font-size: 0.6rem; opacity: 0.7;">Status</span>
+                                            <span class="status-ring" style="font-size: 0.65rem; padding: 0.35rem 0.85rem; border-width: 1px; width: auto; height: auto;">
+                                                <?php echo $row['status']; ?>
+                                            </span>
+                                        </div>
+
+                                        <div class="btn btn-outline" style="padding: 0.6rem 1.2rem; font-size: 0.75rem; border-radius: 2rem;">
+                                            View Project
+                                        </div>
+                                    </div>
+                                </a>
+                            <?php endwhile; ?>
+                        <?php else: ?>
+                            <div class="premium-card text-center py-20">
+                                <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">🌴</span>
+                                <h3 class="text-white">All caught up!</h3>
+                                <p class="text-muted">You don't have any active tasks in your queue right now.</p>
                             </div>
-                    <?php endwhile; ?>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 </body>
+
+</html>
 
 </html>

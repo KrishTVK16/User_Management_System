@@ -32,9 +32,15 @@
     --radius-none: 0;
     --radius-sm: 0.25rem;
     --radius-md: 0.5rem;
-    --radius-lg: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
 
-    --transition: all 0.2s ease-in-out;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    --glass-bg: rgba(56, 69, 85, 0.6);
+    --glass-border: rgba(212, 175, 55, 0.15);
+    --primary-gradient: linear-gradient(135deg, #D4AF37, #C9A24A);
+    --dark-gradient: linear-gradient(180deg, #1B2B3D, #14202E);
 }
 
 * {

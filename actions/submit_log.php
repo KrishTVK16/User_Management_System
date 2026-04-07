@@ -7,6 +7,7 @@ require('../includes/auth_session.php');
 check_login();
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $user_id = $_SESSION['user_id'];
     $date = date('Y-m-d');
 
     // ENFORCEMENT: Check if clocked in
@@ -19,10 +20,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit();
     }
 
-    $project_id = $_POST['project_id'];
+    $project_id = $_POST['project_id'] ?? 0;
+    $description = mysqli_real_escape_string($conn, $_POST['description'] ?? '');
+    $status = mysqli_real_escape_string($conn, $_POST['status'] ?? 'In Progress');
 
     // Parse Time Spent string to minutes
-    $time_input = strtolower($_POST['time_spent']);
+    $time_string = $_POST['time_spent'] ?? '0';
+    $time_input = strtolower($time_string);
     $minutes = 0;
 
     // Logic: 2h 30m
@@ -51,7 +55,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['error'] = "Error submitting log: " . mysqli_error($conn);
     }
 
-    header("Location: ../employee_dashboard.php");
+    // Redirect back to project view if id is present, else dashboard
+    if ($project_id) {
+        header("Location: ../project_view.php?id=$project_id");
+    } else {
+        header("Location: ../employee_dashboard.php");
+    }
     exit();
 }
 ?>

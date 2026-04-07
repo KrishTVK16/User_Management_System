@@ -128,6 +128,12 @@ if (!isset($_SESSION['message']) && !isset($_SESSION['error'])) {
     $_SESSION['error'] = "Workflow error: Invalid status transition.";
 }
 
+if ($project_id) {
+    $redirect = "../project_view.php?id=$project_id";
+} else {
+    $redirect = "../employee_dashboard.php";
+}
+
 header("Location: $redirect");
 exit();
 ?>
