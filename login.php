@@ -92,7 +92,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <label class="flex items-center gap-2 text-sm text-sub nowrap">
                         <input type="checkbox"> Remember me
                     </label>
-                    <a href="forgot_password.php" class="text-sm text-gold hover:underline" style="color: var(--primary-color);">Forgot password?</a>
+                    <a href="forgot_password.php" class="text-sm text-gold hover:underline"
+                        style="color: var(--primary-color);">Forgot password?</a>
                 </div>
 
                 <button type="submit" class="btn btn-primary w-full">Sign In</button>

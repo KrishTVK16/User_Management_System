@@ -1,19 +1,30 @@
 :root {
     /* --- COLOR PALETTE (Logo Inspired - Solid & Sharp) --- */
-    --primary-color: #D4AF37; /* Gold Accent */
-    --primary-hover: #C9A24A; /* Darker Gold */
-    
-    --bg-body: #14202E; /* Deep Navy Background */
-    --bg-surface: #384555; /* Blue-Gray Panel */
-    --bg-sidebar: #14202E; /* Solid Sidebar */
-    --bg-topbar: #1B2B3D; /* Slightly lighter navy */
+    --primary-color: #D4AF37;
+    /* Gold Accent */
+    --primary-hover: #C9A24A;
+    /* Darker Gold */
 
-    --text-main: #EAEBEB; /* High-Contrast White */
-    --text-sub: #6A727D; /* Steel Gray */
-    --text-muted: #A3A3A1; /* Solid Silver */
-    
-    --border-color: #6A727D; /* Solid Steel Border */
-    --border-gold: #D4AF37; /* Gold Accent Border */
+    --bg-body: #14202E;
+    /* Deep Navy Background */
+    --bg-surface: #384555;
+    /* Blue-Gray Panel */
+    --bg-sidebar: #14202E;
+    /* Solid Sidebar */
+    --bg-topbar: #1B2B3D;
+    /* Slightly lighter navy */
+
+    --text-main: #EAEBEB;
+    /* High-Contrast White */
+    --text-sub: #6A727D;
+    /* Steel Gray */
+    --text-muted: #A3A3A1;
+    /* Solid Silver */
+
+    --border-color: #6A727D;
+    /* Solid Steel Border */
+    --border-gold: #D4AF37;
+    /* Gold Accent Border */
 
     --shadow-sharp: 4px 4px 0px rgba(0, 0, 0, 0.2);
     --shadow-btn: 0 4px 0px #9A7B2C;
@@ -151,7 +162,8 @@ body {
 
 .btn-primary {
     background: var(--primary-color);
-    color: #14202E; /* Dark contrast text */
+    color: #14202E;
+    /* Dark contrast text */
     box-shadow: var(--shadow-btn);
 }
 
@@ -216,13 +228,14 @@ textarea {
     font-size: 1rem;
     transition: var(--transition);
     background: #1B2B3D !important;
-    color: #FFFFFF !important; /* Force high-contrast white */
+    color: #FFFFFF !important;
+    /* Force high-contrast white */
 }
 
 /* Ensure visibility during typing and browser autocomplete */
 input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus, 
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
     -webkit-box-shadow: 0 0 0 30px #1B2B3D inset !important;
     -webkit-text-fill-color: #FFFFFF !important;
@@ -231,7 +244,8 @@ input:-webkit-autofill:active {
 
 .form-control::placeholder,
 input::placeholder {
-    color: #A3A3A1 !important; /* Muted silver for placeholder */
+    color: #A3A3A1 !important;
+    /* Muted silver for placeholder */
 }
 
 .form-control:focus,
@@ -274,9 +288,9 @@ textarea:focus {
     align-items: center;
     justify-content: center;
     background: radial-gradient(circle at top left, rgba(212, 175, 55, 0.08), transparent 40%),
-                radial-gradient(circle at bottom right, rgba(27, 43, 61, 1), #0D151F);
+        radial-gradient(circle at bottom right, rgba(27, 43, 61, 1), #0D151F);
     position: relative;
-    padding: 2rem 1rem;
+    padding: 1rem 1rem;
     overflow: hidden;
 }
 
@@ -307,22 +321,31 @@ textarea:focus {
 }
 
 @keyframes blobFloat {
-    0% { transform: translate(0, 0) scale(1); }
-    100% { transform: translate(50px, 50px) scale(1.1); }
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    100% {
+        transform: translate(50px, 50px) scale(1.1);
+    }
 }
 
 
 /* --- LOGIN CARD (Glassmorphic & Large) --- */
 .login-card {
     width: 90%;
-    max-width: 500px; /* Increased to fill more space as requested */
-    padding: 4rem; /* Generous padding for a "special" look */
-    background: rgba(43, 56, 72, 0.7); /* Translucent surface */
+    max-width: 500px;
+    /* Increased to fill more space as requested */
+    padding: 4rem;
+    /* Generous padding for a "special" look */
+    background: rgba(43, 56, 72, 0.7);
+    /* Translucent surface */
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-radius: 2rem; /* Softer rounded corners for that "yellow area" feel */
+    border-radius: 2rem;
+    /* Softer rounded corners for that "yellow area" feel */
     border: 1px solid rgba(212, 175, 55, 0.25);
-    box-shadow: 
+    box-shadow:
         0 20px 40px rgba(0, 0, 0, 0.4),
         0 0 0 1px rgba(255, 255, 255, 0.05) inset;
     z-index: 10;
@@ -337,14 +360,18 @@ textarea:focus {
         width: 100%;
         max-width: none;
         height: auto;
-        min-height: 60vh; /* Occupy more vertical space on small screens */
+        min-height: 60vh;
+        /* Occupy more vertical space on small screens */
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
+
     .logo-img {
-        height: 80px; /* Keeping logo prominent */
+        height: 80px;
+        /* Keeping logo prominent */
     }
+
     .logo-text-login {
         font-size: 1.5rem;
         letter-spacing: 0.15em;
@@ -659,4 +686,4 @@ tr:hover td {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.5rem;
-}
+}
