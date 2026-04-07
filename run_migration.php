@@ -3,8 +3,11 @@
 require('includes/db_connect.php');
 
 $queries = [
+    // 1. Users Table Updates
     "ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'employee', 'super_admin') NOT NULL DEFAULT 'employee'",
     "ALTER TABLE users ADD COLUMN sub_role ENUM('Developer', 'Tester', 'Full Stack', 'None') DEFAULT 'None' AFTER role",
+
+    // 2. Projects Table Updates
     "ALTER TABLE projects ADD COLUMN client_name VARCHAR(100) AFTER name",
     "ALTER TABLE projects ADD COLUMN project_link VARCHAR(255) AFTER client_name",
     "ALTER TABLE projects ADD COLUMN developer_id INT AFTER description",
@@ -20,8 +23,12 @@ $queries = [
     "ALTER TABLE projects ADD COLUMN fix_notes TEXT AFTER completion_notes",
     "ALTER TABLE projects ADD COLUMN is_delayed TINYINT(1) DEFAULT 0 AFTER fix_notes",
     "ALTER TABLE projects MODIFY COLUMN status ENUM('Assigned', 'Development Initialized', 'Development Completed', 'Testing', 'Correction Required', 'Corrected', 'Finalized', 'Client Submitted') DEFAULT 'Assigned'",
-    "ALTER TABLE projects ADD FOREIGN KEY (developer_id) REFERENCES users(id) ON DELETE SET NULL",
-    "ALTER TABLE projects ADD FOREIGN KEY (tester_id) REFERENCES users(id) ON DELETE SET NULL",
+    
+    // Constraints (Added separately to avoid failures if they already exist)
+    "ALTER TABLE projects ADD CONSTRAINT fk_developer FOREIGN KEY (developer_id) REFERENCES users(id) ON DELETE SET NULL",
+    "ALTER TABLE projects ADD CONSTRAINT fk_tester FOREIGN KEY (tester_id) REFERENCES users(id) ON DELETE SET NULL",
+
+    // 3. New Tables
     "CREATE TABLE IF NOT EXISTS project_history (
         id INT AUTO_INCREMENT PRIMARY KEY,
         project_id INT NOT NULL,
@@ -61,12 +68,25 @@ $queries = [
     "UPDATE projects SET status = 'Assigned' WHERE status NOT IN ('Assigned', 'Development Initialized', 'Development Completed', 'Testing', 'Correction Required', 'Corrected', 'Finalized', 'Client Submitted')"
 ];
 
+echo "<h3>Starting Migration...</h3>";
+
 foreach ($queries as $sql) {
     if (mysqli_query($conn, $sql)) {
-        echo "Executed: " . substr($sql, 0, 100) . "...<br>";
+        echo "<p style='color: green;'>✅ Executed: " . substr($sql, 0, 80) . "...</p>";
     } else {
-        echo "Error executing: " . $sql . "<br>Error: " . mysqli_error($conn) . "<br><br>";
+        $errno = mysqli_errno($conn);
+        // Error 1060: Duplicate column name
+        // Error 1061: Duplicate key name
+        // Error 1091: Can't DROP (if applicable)
+        // Error 1050: Table already exists (handled by IF NOT EXISTS)
+        if ($errno == 1060 || $errno == 1061) {
+            echo "<p style='color: orange;'>⚠️ Skipped (Already exists): " . substr($sql, 0, 80) . "...</p>";
+        } else {
+            echo "<p style='color: red;'>❌ Error: " . mysqli_error($conn) . "<br>Query: <code>$sql</code></p>";
+        }
     }
 }
-echo "Migration complete.";
+
+echo "<h3>Migration Complete.</h3>";
+echo "<p><a href='login.php'>Go to Login</a></p>";
 ?>
