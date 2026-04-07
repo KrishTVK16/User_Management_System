@@ -43,7 +43,7 @@ $users_result = mysqli_query($conn, $users_sql);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System Maintenance - SmartFusion Team</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/styles.css?v=1.1">
     <style>
         .cleanup-section { margin-bottom: 3rem; }
         .danger-zone { border: 2px solid #EF4444; padding: 2rem; border-radius: var(--radius-md); background: rgba(239, 68, 68, 0.05); }

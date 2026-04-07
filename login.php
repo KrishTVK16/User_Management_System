@@ -50,7 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <title>Login - SmartFusion Team</title>
     <!-- CSS -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/styles.css?v=1.1">
 </head>
 
 <body>
@@ -98,6 +98,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 <button type="submit" class="btn btn-primary w-full">Sign In</button>
             </form>
+            <div style="position: absolute; bottom: 1rem; right: 1rem; font-size: 0.75rem; color: var(--text-sub); background: rgba(255,255,255,0.05); padding: 0.3rem 0.6rem; border-radius: 4px; border: 1px solid var(--border-color); font-weight: 600;">
+                v1.1
+            </div>
         </div>
     </div>
 
