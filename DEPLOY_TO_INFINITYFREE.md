@@ -62,5 +62,18 @@ You need to tell your PHP code the *new* database credentials because "localhost
 3.  **Login** with the default credentials:
     *   Admin: `admin@smartfusion.com` / `SFadmin@123`
 
+## Step 6: Setup SSL & HTTPS (Secure Site)
+To get the green padlock 🔒 and make your site "Secure", follow these steps:
+
+1.  **Get SSL Certificate**:
+    *   In the InfinityFree Client Area, click **"Free SSL Certificates"**.
+    *   Click **"Add Domain"** and enter your domain name (`smartfusionteam.ct.ws`).
+    *   Click **"Create Order"**.
+    *   Follow the instructions to "Add CNAME records" (usually with one click).
+    *   Once issued, click **"Install SSL Certificate Automatically"**.
+2.  **HTTPS Redirect**:
+    *   We have included an **`.htaccess`** file in your root folder. 
+    *   Make sure you upload this file to the `htdocs` folder. It will automatically redirect `http` to `https`.
+
 ---
-**Done!** Your site is now live on the internet permanently (as long as it gets some traffic).
+**Done!** Your site is now live and secure on the internet.

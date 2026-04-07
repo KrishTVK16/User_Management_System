@@ -25,7 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (mysqli_query($conn, $update_sql)) {
             // In a real system, we would send an email here.
             // For this demo, we'll display the link.
-            $reset_link = "http://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/reset_password.php?token=$token";
+            $reset_link = "https://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/reset_password.php?token=$token";
             $message = "A password reset link has been generated. <br><br> <a href='$reset_link' style='color: var(--primary-color); word-break: break-all;'>$reset_link</a>";
         } else {
             $error = "Database error. Please try again later.";
